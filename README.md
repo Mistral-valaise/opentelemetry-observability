@@ -1,2 +1,0 @@
-# opentelemetry-observability
-opentelemetry observability
