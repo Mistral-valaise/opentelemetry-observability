@@ -263,10 +263,6 @@ components:
     resources:
       limits:
         memory: 20Mi
-    initContainers:
-      - name: wait-for-kafka
-        image: busybox:latest
-        command: ["sh", "-c", "until nc -z -v -w30 kafka 9092; do echo waiting for kafka; sleep 2; done;"]
 
   currency:
     enabled: true
@@ -793,7 +789,7 @@ opentelemetry-collector:
                     endpoint: otel-collector:4318
 
 jaeger:
-  enabled: false
+  enabled: true
   fullnameOverride: jaeger
   provisionDataStore:
     cassandra: false
@@ -965,7 +961,7 @@ grafana:
       memory: 150Mi
 
 opensearch:
-  enabled: false
+  enabled: true
   fullnameOverride: opensearch
   clusterName: demo-cluster
   nodeGroup: otel-demo
