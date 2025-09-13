@@ -47,6 +47,8 @@ jobs:
         helm repo add grafana https://grafana.github.io/helm-charts
         helm repo add sloth https://slok.github.io/sloth
         helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+        helm repo add jaeger https://jaegertracing.github.io/helm-charts
+        helm repo add opensearch https://opensearch-project.github.io/helm-charts
         helm repo update
         
     - name: Validate Helm chart dependencies
@@ -125,6 +127,8 @@ jobs:
         helm repo add grafana https://grafana.github.io/helm-charts
         helm repo add sloth https://slok.github.io/sloth
         helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+        helm repo add jaeger https://jaegertracing.github.io/helm-charts
+        helm repo add opensearch https://opensearch-project.github.io/helm-charts
         helm repo update
         
     - name: Build Helm dependencies
@@ -145,21 +149,6 @@ jobs:
           --set securityContext.runAsGroup=1012310000 \
           --set securityContext.fsGroup=1012310000 \
           --set securityContext.runAsNonRoot=true \
-          --wait --timeout=5m
-          
-    - name: Deploy Loki (Logging Backend)
-      run: |
-        echo "Deploying Loki for log aggregation..."
-        helm upgrade --install loki grafana/loki \
-          --namespace ${{ env.OPENSHIFT_NAMESPACE }} \
-          --set loki.commonConfig.replication_factor=1 \
-          --set loki.storage.type=filesystem \
-          --set loki.auth_enabled=false \
-          --set loki.useTestSchema=true \
-          --set singleBinary.replicas=1 \
-          --set write.replicas=0 \
-          --set read.replicas=0 \
-          --set backend.replicas=0 \
           --wait --timeout=5m
           
     - name: Deploy Sloth (SLO Controller)
