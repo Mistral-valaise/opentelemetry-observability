@@ -34,7 +34,16 @@ default:
     affinity: {}
     tolerations: []
   # Default securityContext for all components
-  securityContext: {}
+  securityContext: 
+    runAsUser: 1012310000
+    runAsNonRoot: true
+    runAsGroup: 1012310000
+  # Default pod security context for all components
+  podSecurityContext:
+    runAsUser: 1012310000
+    runAsNonRoot: true
+    runAsGroup: 1012310000
+    fsGroup: 1012310000
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -167,7 +176,7 @@ components:
   #      runAsUser: 1012310000
 
   accounting:
-    enabled: true
+    enabled: false
     useDefault:
       env: true
     env:
@@ -252,8 +261,9 @@ components:
         value: product-catalog:8080
       - name: SHIPPING_ADDR
         value: shipping:8080
-      - name: KAFKA_ADDR
-        value: kafka:9092
+      # Remove Kafka dependency since it's disabled
+      # - name: KAFKA_ADDR
+      #   value: kafka:9092
       - name: FLAGD_HOST
         value: flagd
       - name: FLAGD_PORT
@@ -299,7 +309,7 @@ components:
         memory: 100Mi
 
   fraud-detection:
-    enabled: true
+    enabled: false
     useDefault:
       env: true
     env:
@@ -355,7 +365,7 @@ components:
       - name: WEB_OTEL_SERVICE_NAME
         value: frontend-web
       - name: PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-        value: http://localhost:8080/otlp-http/v1/traces             # This expects users to use `kubectl port-forward ...`
+        value: https://frontend-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com/otlp-http/v1/traces
     resources:
       limits:
         memory: 250Mi
@@ -363,9 +373,22 @@ components:
       runAsUser: 1012310000  # nextjs
       runAsGroup: 1012310000
       runAsNonRoot: true
+    ingress:
+      enabled: true
+      annotations:
+        # Let OpenShift create a secure Route
+        route.openshift.io/termination: "edge"
+        route.openshift.io/insecureEdgeTerminationPolicy: "Redirect"   
+      hosts:
+        - host: frontend-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com
+          paths:
+            - path: /
+              pathType: Prefix
+              port: 8080
+      tls: []
 
   frontend-proxy:
-    enabled: true
+    enabled: false
     useDefault:
       env: true
     service:
@@ -414,9 +437,22 @@ components:
       runAsUser: 1012310000  # envoy
       runAsGroup: 1012310000
       runAsNonRoot: true
+    ingress:
+      enabled: true
+      annotations:
+        # Let OpenShift create a secure Route
+        route.openshift.io/termination: "edge"
+        route.openshift.io/insecureEdgeTerminationPolicy: "Redirect"   
+      hosts:
+        - host: frontend-proxy-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com
+          paths:
+            - path: /
+              pathType: Prefix
+              port: 8080
+      tls: []
 
   image-provider:
-    enabled: true
+    enabled: false
     useDefault:
       env: true
     service:
@@ -644,7 +680,7 @@ components:
           name: flagd-config
 
   kafka:
-    enabled: true
+    enabled: false
     useDefault:
       env: true
     replicas: 1
@@ -660,6 +696,14 @@ components:
         value: http://$(OTEL_COLLECTOR_NAME):4318
       - name: KAFKA_HEAP_OPTS
         value: "-Xmx400M -Xms400M"
+      # Use writable directories
+      - name: KAFKA_LOG_DIRS
+        value: "/tmp/kafka-logs"
+      - name: KAFKA_METADATA_LOG_DIR
+        value: "/tmp/kafka-metadata"
+      # Allow Kafka to write configuration
+      - name: KAFKA_CONFIG_DIR
+        value: "/tmp/kafka-config"
     resources:
       limits:
         memory: 600Mi
@@ -667,6 +711,26 @@ components:
       runAsUser: 1012310000  # appuser
       runAsGroup: 1012310000
       runAsNonRoot: true
+    # Add writable volumes for Kafka
+    additionalVolumes:
+      - name: kafka-logs
+        emptyDir: {}
+      - name: kafka-metadata
+        emptyDir: {}
+      - name: kafka-config
+        emptyDir: {}
+    additionalVolumeMounts:
+      - name: kafka-logs
+        mountPath: /tmp/kafka-logs
+      - name: kafka-metadata
+        mountPath: /tmp/kafka-metadata
+      - name: kafka-config
+        mountPath: /tmp/kafka-config
+    # Override the start command to copy config to writable location
+    command:
+      - "/bin/bash"
+      - "-c"
+      - "mkdir -p /tmp/kafka-config && cp -r /opt/kafka/config/* /tmp/kafka-config/ && exec /opt/kafka/bin/kafka-server-start.sh /tmp/kafka-config/kraft/server.properties"
 
   valkey-cart:
     enabled: true
@@ -726,7 +790,7 @@ opentelemetry-collector:
         collection_interval: 10s
 
     exporters:
-      ## Create an exporter to Jaeger using the standard `otlp` export format
+      ## Create an exporter to Tempo using the standard `otlp` export format
       otlp:
         endpoint: tempo:4317
         tls:
@@ -832,6 +896,20 @@ jaeger:
 
 prometheus:
   enabled: true
+  extraManifests: 
+    - |
+      kind: RoleBinding
+      apiVersion: rbac.authorization.k8s.io/v1
+      metadata:
+        name: prometheus-view-rolebinding
+      subjects:
+        - kind: ServiceAccount
+          name: prometheus
+          namespace: valaise16-dev
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: view
   rbac:
     create: false
   alertmanager:
@@ -912,7 +990,7 @@ prometheus:
 grafana:
   enabled: true
   securityContext:
-    runAsNonRoot: false
+    runAsNonRoot: true
     runAsUser: 1012310000
     runAsGroup: 1012310000
     fsGroup: 1012310000
@@ -925,6 +1003,9 @@ grafana:
 
     hosts:
       - grafana-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com
+    paths:
+      - path: /
+        pathType: Prefix
   rbac:
     create: false
     pspEnabled: false
@@ -940,7 +1021,7 @@ grafana:
       org_name: Main Org.
       org_role: Admin
     server:
-      root_url: "%(protocol)s://%(domain)s:%(http_port)s/grafana"
+      root_url: "%(protocol)s://%(domain)s"
       serve_from_sub_path: true
   adminPassword: admin
   plugins:
@@ -960,7 +1041,7 @@ grafana:
               - datasourceUid: webstore-traces
                 name: trace_id
         - name: Tempo
-          uid: Tempo
+          uid: webstore-traces
           type: tempo
           access: proxy
           url: http://tempo:3200
@@ -968,10 +1049,10 @@ grafana:
             httpMethod: GET
             # Enable service map using Prometheus as the data source for service graph metrics
             serviceMap:
-              datasourceUid: "Prometheus"
+              datasourceUid: "webstore-metrics"
             # Configure trace to logs correlation
             tracesToLogs:
-              datasourceUid: "Loki"
+              datasourceUid: "webstore-logs"
               tags: ["service.name", "service.instance.id", "service.version"]
               mappedTags:
                 - key: service.name
@@ -988,7 +1069,7 @@ grafana:
               customQuery: true
             # Configure trace to metrics correlation
             tracesToMetrics:
-              datasourceUid: Prometheus
+              datasourceUid: webstore-metrics
               spanStartTimeShift: "1h"
               spanEndTimeShift: "1h"
               tags:
@@ -1085,7 +1166,16 @@ tempo:
       trace:
         backend: local
         local:
-          path: /var/tempo
+          path: /tmp/tempo
+        wal:
+          path: /tmp/tempo/wal
+    # Use writable directory for tempo data
+    extraVolumeMounts:
+      - name: tempo-data
+        mountPath: /tmp/tempo
+  extraVolumes:
+    - name: tempo-data
+      emptyDir: {}
 
 opensearch:
   enabled: false
