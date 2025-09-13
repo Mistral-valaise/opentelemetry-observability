@@ -47,6 +47,9 @@
     "grafana": {
       "type": "object"
     },
+    "tempo": {
+      "type": "object"
+    },
     "opensearch": {
       "type": "object"
     }

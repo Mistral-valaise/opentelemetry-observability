@@ -68,7 +68,7 @@ flowchart LR
   J --> G
 ```
 
-> **Note**: You choose **one** tracing backend (Tempo *or* Jaeger) and **one** logging backend (Loki *or* OpenSearch). Metrics always land in Prometheus.
+> **Note**: You choose **one** tracing backend (Tempo _or_ Jaeger) and **one** logging backend (Loki _or_ OpenSearch). Metrics always land in Prometheus.
 
 ---
 
@@ -104,16 +104,199 @@ All options are controlled via `values.yaml`. See the schema below.
 
 ---
 
+## Quickstart: Docker Desktop Kubernetes (Local)
+
+This path is optimized for local testing on macOS/Windows with Docker Desktop’s built-in Kubernetes.
+
+### Before you start
+
+- Enable Kubernetes in Docker Desktop: Settings → Kubernetes → “Enable Kubernetes”.
+- Resources: at least 4 CPUs and 8 GB RAM for a smooth demo. Increase if you see OOM or CrashLoopBackOff.
+- Make sure your kubectl context is `docker-desktop`:
+
+```bash
+kubectl config use-context docker-desktop
+kubectl get nodes
+```
+
+### Option A — One command using the Makefile
+
+From this repo root:
+
+```bash
+make install-tempo-loki
+make port-forward-grafana
+```
+
+What it does:
+
+- Adds Helm repos, creates namespace `opentelemetry-demo`.
+- Builds chart dependencies (Tempo subchart) and deploys the OpenTelemetry Demo (includes Grafana) using `charts/opentelemetry-demo/values.yaml`.
+- Configures the collector with spanmetrics and servicegraph connectors.
+- Provisions Grafana datasources for Prometheus and Tempo.
+- Installs Sloth controller.
+- Applies two example Sloth SLOs.
+- Applies two example Sloth SLOs.
+
+Switch providers: edit `charts/opentelemetry-demo/values.yaml` (set jaeger/opensearch enabled flags and adjust collector exporters) and rerun the install command.
+
+### Option B — Use kube-prometheus-stack (recommended for Sloth SLOs)
+
+This installs Prometheus Operator CRDs (ServiceMonitor/PodMonitor/PrometheusRule) so Sloth can generate rules and Prometheus can evaluate them. It also avoids “No data” on SLO dashboards.
+
+From repo root:
+
+```bash
+make add-repos ns install-kps
+make install-tempo-loki-kps
+make port-forward-grafana
+```
+
+Notes:
+
+- Grafana included in the demo remains enabled; we disable the Grafana that ships with kube-prometheus-stack.
+- The overlay `values/kps-values.yaml` points Grafana’s Prometheus datasource at the KPS Prometheus service.
+- Our SLO queries use the Collector’s spanmetrics series (traces_span_metrics_*), which are always present when our collector runs.
+
+### Option C — Manual step-by-step
+
+1) Add Helm repos
+
+```bash
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo add sloth https://slok.github.io/sloth
+helm repo update
+```
+
+1) Create the namespace
+
+```bash
+kubectl create namespace opentelemetry-demo
+```
+
+1) Install backends (choose one tracing and one logging)
+
+- Tempo (traces via subchart, recommended):
+
+```bash
+helm dependency build opentelemetry-observability/charts/opentelemetry-demo
+helm upgrade --install otel-demo ./opentelemetry-observability/charts/opentelemetry-demo \
+  --namespace opentelemetry-demo \
+  -f opentelemetry-observability/charts/opentelemetry-demo/values.yaml \
+  --create-namespace
+```
+
+- Tempo (standalone alternative):
+
+```bash
+helm upgrade --install tempo grafana/tempo \
+  --namespace opentelemetry-demo \
+  --set tempo.persistence.enabled=false \
+  --set tempo.storage.trace.backend=local \
+  --set tempo.storage.trace.local.path=/var/tempo
+```
+
+- Loki (logs):
+
+```bash
+helm upgrade --install loki grafana/loki \
+  --namespace opentelemetry-demo \
+  --set loki.commonConfig.replication_factor=1 \
+  --set loki.storage.type=filesystem \
+  --set loki.auth_enabled=false \
+  --set singleBinary.replicas=1 \
+  --set write.replicas=0 \
+  --set read.replicas=0 \
+  --set backend.replicas=0
+```
+
+1) Grafana is deployed by the OpenTelemetry Demo chart (no separate install needed).
+
+- Datasources provisioned: Prometheus (default), Tempo
+- Logs datasource is omitted by default. Add Loki/OpenSearch if you plan to collect logs.
+
+1) Install Sloth (SLO controller)
+
+```bash
+helm upgrade --install sloth sloth/sloth \
+  --namespace opentelemetry-demo
+```
+
+1) Deploy the OpenTelemetry Demo (Tempo)
+
+```bash
+helm dependency build opentelemetry-observability/charts/opentelemetry-demo
+helm upgrade --install otel-demo ./opentelemetry-observability/charts/opentelemetry-demo \
+  --namespace opentelemetry-demo \
+  -f opentelemetry-observability/charts/opentelemetry-demo/values.yaml \
+  --create-namespace
+```
+
+1) Apply example SLOs
+
+```bash
+kubectl -n opentelemetry-demo apply -f values/slo/frontend-availability.yaml
+kubectl -n opentelemetry-demo apply -f values/slo/frontend-latency.yaml
+```
+
+1) Port-forward Grafana (since there’s no LoadBalancer in Docker Desktop)
+
+```bash
+kubectl -n opentelemetry-demo port-forward svc/grafana 3000:80
+# Open http://localhost:3000
+```
+
+1) Sign in to Grafana
+
+The Grafana chart generates an admin password by default. Retrieve it:
+
+```bash
+kubectl -n opentelemetry-demo get secret grafana -o jsonpath='{.data.admin-password}' | base64 -d; echo
+```
+
+1) Verify data & health
+
+```bash
+kubectl -n opentelemetry-demo get pods
+
+# Collector should be Ready and exporting to Tempo
+kubectl -n opentelemetry-demo logs deploy/otel-collector --tail=100
+
+# Tempo should be Ready
+kubectl -n opentelemetry-demo rollout status statefulset/tempo --timeout=60s
+kubectl -n opentelemetry-demo logs statefulset/tempo --tail=30
+```
+
+- In Grafana → Dashboards → search for “Sloth” to view SLO dashboards.
+- Explore → Tempo for traces; Prometheus datasource for metrics.
+- Servicegraph and spanmetrics metrics are emitted by the collector and visible in Prometheus.
+- Give it ~1–3 minutes for data to start flowing.
+
+If you see “No data” on SLO dashboards:
+
+- Ensure Prometheus Operator CRDs exist (easiest path: install kube-prometheus-stack; see Option B).
+- Ensure the Prometheus datasource in Grafana points to the active Prometheus (embedded or KPS). For KPS, it should be `http://kube-prometheus-stack-prometheus:9090`.
+- Confirm Sloth created PrometheusRule resources: `kubectl get prometheusrules -n opentelemetry-demo`.
+- Check that spanmetrics series exist: run a query like `traces_span_metrics_calls_total` or `traces_span_metrics_duration_milliseconds_count`.
+
+Cleanup (optional):
+
+```bash
+helm -n opentelemetry-demo uninstall otel-demo loki sloth || true
+kubectl delete namespace opentelemetry-demo --wait=false || true
+```
+
+---
+
 ## Repository Layout (suggested)
 
-```
+```text
 ./
 ├─ charts/
 │  └─ opentelemetry-demo/        # vendored upstream chart (as git submodule or subtree)
 ├─ values/
-│  ├─ values.observability.yaml  # your main toggle file
-│  ├─ values.tempo-loki.yaml     # example profile
-│  ├─ values.jaeger-opensearch.yaml
+│  ├─ values/                    # SLO CRs and future overrides (optional)
 │  └─ slo/                       # Sloth SLO CRs for services
 │     ├─ frontend-availability.yaml
 │     └─ frontend-latency.yaml
@@ -129,7 +312,7 @@ All options are controlled via `values.yaml`. See the schema below.
 > This layer sits **on top of** the OpenTelemetry Demo chart and related backend charts. You can keep all toggles in a single file.
 
 ```yaml
-# values/values.observability.yaml
+# Example toggles live directly in `charts/opentelemetry-demo/values.yaml`
 observability:
   tracing:
     provider: tempo   # one of: tempo, jaeger
@@ -246,13 +429,13 @@ helm repo add slok https://charts.slok.dev
 helm repo update
 ```
 
-2) **Create a namespace**:
+1) **Create a namespace**:
 
 ```bash
 kubectl create namespace opentelemetry-demo
 ```
 
-3) **Install/upgrade backends** (pick one per category):
+1) **Install/upgrade backends** (pick one per category):
 
 - **Tempo**
 
@@ -283,7 +466,7 @@ kubectl create namespace opentelemetry-demo
     --namespace opentelemetry-demo
   ```
 
-4) **Install Grafana** with sidecars to auto‑load dashboards/datasources:
+1) **Install Grafana** with sidecars to auto‑load dashboards/datasources:
 
 ```bash
 helm upgrade --install grafana grafana/grafana \
@@ -293,24 +476,24 @@ helm upgrade --install grafana grafana/grafana \
   --set service.type=ClusterIP
 ```
 
-5) **Install Sloth (controller)** when `sloth.enabled=true`:
+1) **Install Sloth (controller)** when `sloth.enabled=true`:
 
 ```bash
 helm upgrade --install sloth slok/sloth \
   --namespace opentelemetry-demo
 ```
 
-6) **Deploy the OpenTelemetry Demo** (using your overlay values):
+1) **Deploy the OpenTelemetry Demo** (using your overlay values):
 
 ```bash
 helm upgrade --install otel-demo open-telemetry/opentelemetry-demo \
   --namespace opentelemetry-demo \
-  -f values/values.observability.yaml
+  -f opentelemetry-observability/charts/opentelemetry-demo/values.yaml
 ```
 
 > If you vendored the chart under `charts/opentelemetry-demo`, use `./charts/opentelemetry-demo` instead of the repo name.
 
-7) **Port‑forward Grafana** if no Ingress:
+1) **Port‑forward Grafana** if no Ingress:
 
 ```bash
 kubectl -n opentelemetry-demo port-forward svc/grafana 3000:80
@@ -339,13 +522,13 @@ sequenceDiagram
   Prom->>AM: "Fire alerts on error budget burn"
 ```
 
-### Example SLOs
+### Example SLOs (using spanmetrics)
 
 _**Availability (Frontend)**_
 
 ```yaml
 apiVersion: sloth.slok.dev/v1
-kind: SLO
+kind: PrometheusServiceLevel
 metadata:
   name: frontend-availability
   namespace: opentelemetry-demo
@@ -355,28 +538,27 @@ spec:
     - name: availability
       objective: 99.5
       description: Frontend HTTP success rate over 30d
-      timeWindow: 30d
       sli:
         events:
-          errorQuery: sum(rate(http_server_requests_seconds_count{job="frontend",status=~"5.."}[5m]))
-          totalQuery: sum(rate(http_server_requests_seconds_count{job="frontend"}[5m]))
+          errorQuery: |
+  sum(rate(traces_span_metrics_calls_total{service_name="frontend", status_code="STATUS_CODE_ERROR"}[{{.window}}]))
+          totalQuery: |
+  sum(rate(traces_span_metrics_calls_total{service_name="frontend"}[{{.window}}]))
       alerting:
         name: FrontendAvailability
         labels:
           category: availability
         annotations:
           summary: "Frontend availability SLO is burning error budget"
-        pageAlert:
-          disabled: false
-        ticketAlert:
-          disabled: false
+    pageAlert: {}
+    ticketAlert: {}
 ```
 
 _**Latency (Frontend p95)**_
 
 ```yaml
 apiVersion: sloth.slok.dev/v1
-kind: SLO
+kind: PrometheusServiceLevel
 metadata:
   name: frontend-latency
   namespace: opentelemetry-demo
@@ -386,24 +568,25 @@ spec:
     - name: latency-p95
       objective: 99.0
       description: p95 latency under 300ms over 30d
-      timeWindow: 30d
       sli:
-        raw:
-          # Replace with your histogram metrics
+        events:
+          # Good events: spans with duration <= 300ms using spanmetrics histogram
           errorQuery: |
-            sum(rate(http_server_requests_seconds_bucket{le="0.3",job="frontend"}[5m]))
+            # Good events are spans with duration <= 400ms using the histogram buckets
+            # Error events = total - good
+            sum(rate(traces_span_metrics_duration_milliseconds_count{service_name="frontend"}[{{.window}}]))
+            -
+            sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name="frontend", le="400.0"}[{{.window}}]))
           totalQuery: |
-            sum(rate(http_server_requests_seconds_count{job="frontend"}[5m]))
+            sum(rate(traces_span_metrics_duration_milliseconds_count{service_name="frontend"}[{{.window}}]))
       alerting:
         name: FrontendLatency
         labels:
           category: latency
         annotations:
           summary: "Frontend latency SLO is burning error budget"
-        pageAlert:
-          disabled: false
-        ticketAlert:
-          disabled: false
+        pageAlert: {}
+        ticketAlert: {}
 ```
 
 > Adjust metric names/labels to match the demo’s Prometheus exposition. The queries above are generic examples.
@@ -413,7 +596,7 @@ spec:
 We auto‑import the Sloth dashboards via Grafana’s “gnetId” mechanism.
 
 ```yaml
-# values/values.observability.yaml (append)
+# Append to `charts/opentelemetry-demo/values.yaml`
 grafana:
   dashboards:
     default:
@@ -436,7 +619,7 @@ When Grafana starts (or the sidecar scans), it will download and load these dash
 Point Grafana at the right backends using provisioned datasources:
 
 ```yaml
-# values/values.observability.yaml (append)
+# Append to `charts/opentelemetry-demo/values.yaml`
 grafana:
   datasources:
     datasources.yaml:
@@ -553,7 +736,7 @@ sequenceDiagram
 
 ## Switching Providers Later
 
-1. Edit `values.observability.yaml` and change:
+1. Edit `charts/opentelemetry-demo/values.yaml` and change:
 
 ```yaml
 observability:
@@ -563,14 +746,14 @@ observability:
     provider: opensearch  # was loki
 ```
 
-2. Upgrade:
+1. Upgrade:
 
 ```bash
 helm upgrade otel-demo open-telemetry/opentelemetry-demo \
-  -n opentelemetry-demo -f values/values.observability.yaml
+  -n opentelemetry-demo -f opentelemetry-observability/charts/opentelemetry-demo/values.yaml
 ```
 
-3. Verify Grafana datasources and dashboards reflect the new providers.
+1. Verify Grafana datasources and dashboards reflect the new providers.
 
 ---
 
@@ -579,9 +762,12 @@ helm upgrade otel-demo open-telemetry/opentelemetry-demo \
 - **No traces in Grafana**
   - Check Collector exporter endpoint for the selected tracing backend.
   - OTLP gRPC port should be reachable (`4317`).
-- **No logs in Grafana**
-  - If using Loki, verify push URL and that the `loki` exporter is enabled in the logs pipeline.
-  - If using OpenSearch, ensure a valid ingestion path (gateway/exporter) is configured.
+- **Tempo CrashLoopBackOff**
+  - Ensure you don’t set `tempo.queryFrontend.query.rangeQuery.enabled` (flag schema changed). Use the minimal values shown above.
+- **Collector CrashLoopBackOff**
+  - Check container logs. If you see `unknown type: "loki" exporter`, remove the `loki` exporter (not present in this collector build) or enable a supported logs exporter.
+- **Sloth install error about PodMonitor**
+  - If you see "no matches for kind PodMonitor", you don't have the Prometheus Operator CRDs installed. For this demo you can ignore metrics scraping of Sloth, or install kube-prometheus-stack to get those CRDs. Sloth will still reconcile SLO CRs without them.
 - **SLO panels empty**
   - Confirm Sloth CRs applied and Prometheus rules created (`kubectl get prometheusrules -n opentelemetry-demo`).
   - Validate metric names in SLO queries.
@@ -590,69 +776,11 @@ helm upgrade otel-demo open-telemetry/opentelemetry-demo \
 
 ---
 
-## Appendix A — Full Example Values (Tempo + Loki + Sloth)
+## Appendix A — Example: Collector exporters and connectors (Tempo + spanmetrics + servicegraph)
 
 ```yaml
 observability:
-  tracing:
-    provider: tempo
-    enabled: true
-    tempo:
-      enabled: true
-      otlpEndpoint: "tempo:4317"
-      insecure: true
-  logging:
-    provider: loki
-    enabled: true
-    loki:
-      enabled: true
-      pushEndpoint: "http://loki:3100/loki/api/v1/push"
-  metrics:
-    prometheus:
-      enabled: true
-  dashboards:
-    grafana:
-      enabled: true
-
-sloth:
-  enabled: true
-  installController: true
-  namespace: opentelemetry-demo
-  sloFiles:
-    - values/slo/frontend-availability.yaml
-    - values/slo/frontend-latency.yaml
-
-grafana:
-  datasources:
-    datasources.yaml:
-      apiVersion: 1
-      datasources:
-        - name: Prometheus
-          type: prometheus
-          url: http://prometheus-server:80
-          access: proxy
-          isDefault: true
-        - name: Tempo
-          type: tempo
-          url: http://tempo:3100
-          access: proxy
-        - name: Loki
-          type: loki
-          url: http://loki:3100
-          access: proxy
-  dashboards:
-    default:
-      sloth-slo-detail:
-        gnetId: 14348
-        revision: 1
-        datasource: Prometheus
-      sloth-slos-high-level:
-        gnetId: 14643
-        revision: 1
-        datasource: Prometheus
-
-opentelemetryCollector:
-  config:
+  opentelemetryCollector:
     receivers:
       otlp:
         protocols:
@@ -668,11 +796,6 @@ opentelemetryCollector:
       prometheus:
         endpoint: ":8889"
       loki:
-        endpoint: http://loki:3100/loki/api/v1/push
-        labels:
-          resource:
-            service_name: service.name
-    service:
       pipelines:
         traces:
           receivers: [otlp]
@@ -684,17 +807,13 @@ opentelemetryCollector:
           exporters: [prometheus]
         logs:
           receivers: [otlp]
-          processors: [batch]
+            exporters: [otlp, spanmetrics, servicegraph]
           exporters: [loki]
-```
+            receivers: [otlp, spanmetrics, servicegraph]
 
 ---
 
-## Appendix B — AI Implementation Prompt (Copy‑Paste)
-
-> Use this prompt with your favorite AI code assistant to scaffold the implementation in this repo.
-
-```
+```text
 You are an expert Kubernetes/Helm DevOps engineer. Implement the following in my repository:
 
 Goal: Extend the OpenTelemetry Demo Helm deployment to support switchable backends (Tempo/Jaeger for traces, Loki/OpenSearch for logs), enable SLO monitoring with Sloth, and auto‑provision Grafana datasources & SLO dashboards.
@@ -705,7 +824,7 @@ Repo constraints:
 - All customizations live in overlay Helm values and small helper templates (NOT forking upstream unless strictly necessary).
 
 Tasks:
-1) Create `values/values.observability.yaml` with toggles:
+1) Use `charts/opentelemetry-demo/values.yaml` for toggles:
    - `observability.tracing.provider` in {tempo, jaeger}
    - `observability.logging.provider` in {loki, opensearch}
    - `sloth.enabled`, `sloth.installController`, `sloth.sloFiles[]`
@@ -734,7 +853,7 @@ Important:
 
 Deliverables:
 - Updated README (provided) remains the single source of truth for operators.
-- A working `values/values.observability.yaml` example and SLO CRs under `values/slo/`.
+- SLO CRs under `values/slo/`.
 - Minimal helper templates if required to patch collector config.
 ```
 

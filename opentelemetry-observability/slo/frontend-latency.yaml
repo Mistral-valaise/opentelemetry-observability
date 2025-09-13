@@ -1,0 +1,30 @@
+apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: frontend-latency
+  namespace: opentelemetry-demo
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  service: frontend
+  slos:
+    - name: latency-p95
+      objective: 99.0
+      description: p95 latency under 400ms over 30d
+      sli:
+        # Use spanmetrics histogram as events SLI: good events are spans <= 400ms.
+        events:
+          # Error events = total - good (good are spans with duration <= 400ms)
+          errorQuery: |
+            sum(rate(traces_span_metrics_duration_milliseconds_count{service_name="frontend"}[{{.window}}]))
+            -
+            sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name="frontend", le="400.0"}[{{.window}}]))
+          totalQuery: |
+            sum(rate(traces_span_metrics_duration_milliseconds_count{service_name="frontend"}[{{.window}}]))
+      alerting:
+        name: FrontendLatency
+        labels:
+          category: latency
+        annotations:
+          summary: "Frontend latency SLO is burning error budget"
