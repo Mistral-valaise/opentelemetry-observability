@@ -834,6 +834,34 @@ components:
       runAsUser: 1012310000  # valkey
       runAsGroup: 1012310000
       runAsNonRoot: true
+    # Add writable volume for Valkey data and configuration
+    additionalVolumes:
+      - name: valkey-data
+        emptyDir: {}
+      - name: valkey-config
+        emptyDir: {}
+    additionalVolumeMounts:
+      - name: valkey-data
+        mountPath: /tmp/valkey-data
+      - name: valkey-config
+        mountPath: /tmp/valkey-config
+    # Override command to disable RDB snapshots and use writable directories
+    command:
+      - "valkey-server"
+      - "--save"
+      - ""
+      - "--appendonly"
+      - "no"
+      - "--stop-writes-on-bgsave-error"
+      - "no"
+      - "--dir"
+      - "/tmp/valkey-data"
+      - "--port"
+      - "6379"
+      - "--bind"
+      - "0.0.0.0"
+      - "--protected-mode"
+      - "no"
 
 opentelemetry-collector:
   enabled: true
