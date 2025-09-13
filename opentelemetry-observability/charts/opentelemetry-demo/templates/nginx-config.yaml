@@ -1,0 +1,62 @@
+{{- if (index .Values.components "image-provider").enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "otel-demo.name" . }}-nginx-config
+  labels:
+    {{- include "otel-demo.labels" . | nindent 4 }}
+data:
+  nginx.conf.template: |
+    load_module modules/ngx_otel_module.so;
+
+    pid /tmp/nginx.pid;
+    
+    # Error log can be in global context
+    error_log /tmp/error.log;
+
+    events {
+        worker_connections 1024;
+    }
+
+    http {
+        # Set nginx temp paths to writable directories
+        client_body_temp_path /tmp/client_temp;
+        proxy_temp_path /tmp/proxy_temp;
+        fastcgi_temp_path /tmp/fastcgi_temp;
+        uwsgi_temp_path /tmp/uwsgi_temp;
+        scgi_temp_path /tmp/scgi_temp;
+        
+        # Access log in http context
+        access_log /tmp/access.log;
+        
+        otel_exporter {
+            endpoint ${OTEL_COLLECTOR_HOST}:${OTEL_COLLECTOR_PORT_GRPC};
+        }
+        otel_trace on;
+        otel_trace_context propagate;
+        otel_service_name ${OTEL_SERVICE_NAME};
+        otel_span_name image-provider;
+
+        include /etc/nginx/mime.types;
+        sendfile on;
+        server {
+            listen ${IMAGE_PROVIDER_PORT};
+            listen [::]:${IMAGE_PROVIDER_PORT};
+
+            resolver 127.0.0.11;
+            autoindex off;
+
+            server_name _;
+            server_tokens off;
+
+            root /static;
+            gzip_static on;
+
+            location /status {
+                stub_status on;
+                access_log /tmp/status.log;
+                allow all;
+            }
+        }
+    }
+{{- end }}

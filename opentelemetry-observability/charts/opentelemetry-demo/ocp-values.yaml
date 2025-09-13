@@ -365,7 +365,7 @@ components:
       - name: WEB_OTEL_SERVICE_NAME
         value: frontend-web
       - name: PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-        value: https://frontend-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com/otlp-http/v1/traces
+        value: https://frontend-proxy-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com/otlp-http/v1/traces
     resources:
       limits:
         memory: 250Mi
@@ -388,7 +388,7 @@ components:
       tls: []
 
   frontend-proxy:
-    enabled: false
+    enabled: true
     useDefault:
       env: true
     service:
@@ -416,10 +416,10 @@ components:
         value: image-provider
       - name: IMAGE_PROVIDER_PORT
         value: "8081"
-      - name: JAEGER_HOST
-        value: jaeger-query
-      - name: JAEGER_PORT
-        value: "16686"
+      - name: TEMPO_HOST
+        value: tempo
+      - name: TEMPO_PORT
+        value: "3200"
       - name: LOCUST_WEB_HOST
         value: load-generator
       - name: LOCUST_WEB_PORT
@@ -434,9 +434,30 @@ components:
       limits:
         memory: 65Mi
     securityContext:
-      runAsUser: 1012310000  # envoy
+      runAsUser: 1012310000
       runAsGroup: 1012310000
       runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      seccompProfile:
+        type: RuntimeDefault
+    # Add writable volumes for envoy
+    additionalVolumes:
+      - name: envoy-work
+        emptyDir: {}
+    additionalVolumeMounts:
+      - name: envoy-work
+        mountPath: /tmp/envoy
+    mountedConfigMaps:
+      - name: envoy-config
+        mountPath: /home/envoy
+        existingConfigMap: otel-demo-envoy-config
+    command:
+      - "/bin/sh"
+      - "-c"
+      - "envsubst < /home/envoy/envoy.tmpl.yaml > /tmp/envoy/envoy.yaml && envoy -c /tmp/envoy/envoy.yaml"
     ingress:
       enabled: true
       annotations:
@@ -450,9 +471,10 @@ components:
               pathType: Prefix
               port: 8080
       tls: []
+      
 
   image-provider:
-    enabled: false
+    enabled: true
     useDefault:
       env: true
     service:
@@ -467,6 +489,31 @@ components:
     resources:
       limits:
         memory: 50Mi
+    securityContext:
+      runAsUser: 1012310000
+      runAsGroup: 1012310000
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      seccompProfile:
+        type: RuntimeDefault
+    # Mount writable directory for nginx config
+    additionalVolumes:
+      - name: nginx-config
+        emptyDir: {}
+    additionalVolumeMounts:
+      - name: nginx-config
+        mountPath: /tmp/nginx
+    mountedConfigMaps:
+      - name: nginx-template
+        mountPath: /etc/nginx-templates
+        existingConfigMap: otel-demo-nginx-config
+    command:
+      - "/bin/sh"
+      - "-c"
+      - "envsubst '$OTEL_COLLECTOR_HOST $IMAGE_PROVIDER_PORT $OTEL_COLLECTOR_PORT_GRPC $OTEL_SERVICE_NAME' < /etc/nginx-templates/nginx.conf.template > /tmp/nginx/nginx.conf && nginx -c /tmp/nginx/nginx.conf -g 'daemon off;'"
 
   load-generator:
     enabled: false
