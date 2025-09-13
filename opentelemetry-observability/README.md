@@ -30,6 +30,38 @@ This repository provides a production-ready deployment of the **OpenTelemetry De
 
 ## 🏗️ Architecture Overview
 
+# 🔭 OpenTelemetry Observability Demo on OpenShift
+
+> **A comprehensive guide for junior DevOps engineers to deploy and manage OpenTelemetry Demo with full observability stack on OpenShift Developer Sandbox**
+
+[![Deploy to OpenShift](https://github.com/Mistral-valaise/opentelemetry-observability/actions/workflows/deploy-openshift.yml/badge.svg)](https://github.com/Mistral-valaise/opentelemetry-observability/actions/workflows/deploy-openshift.yml)
+
+This repository provides a production-ready deployment of the **OpenTelemetry Demo** application with complete observability infrastructure including:
+
+- 🎯 **Distributed Tracing** with Tempo
+- 📊 **Metrics Collection** with Prometheus  
+- 📝 **Log Aggregation** with Loki
+- 📈 **Visualization** with Grafana
+- 🎛️ **SLO Monitoring** with Sloth
+- 🚀 **Automated CI/CD** with GitHub Actions
+
+## 📋 Table of Contents
+
+- [Architecture Overview](#architecture-overview)
+- [Quick Start](#quick-start)
+- [Local Development](#local-development)
+- [OpenShift Deployment](#openshift-deployment)
+- [Observability Stack](#observability-stack)
+- [SLO Monitoring](#slo-monitoring)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Operations Guide](#operations-guide)
+- [Troubleshooting](#troubleshooting)
+- [Additional Resources](#additional-resources)
+
+---
+
+## Architecture Overview
+
 ### 🏭 System Architecture Overview
 
 Our OpenTelemetry Demo runs as a distributed microservices application with full observability instrumentation:
@@ -231,6 +263,113 @@ graph TB
 ```
 
 **Key Features of Our Deployment:**
+
+- ✅ **All core services running** with proper security contexts for OpenShift
+- ✅ **Tempo tracing backend** instead of Jaeger (configured in ocp-values.yaml)
+- ✅ **Custom ConfigMaps** for Envoy and Nginx configurations
+- ✅ **OpenShift Routes** for external access with TLS termination
+- ✅ **Resource optimization** with disabled non-essential components
+- ✅ **Frontend traces** properly routed through frontend-proxy to collector
+
+### 🔄 Data Flow Architecture
+
+This diagram shows how observability data flows through our system:
+
+```mermaid
+sequenceDiagram
+    participant User as 👤 User
+    participant FE as 🖥️ Frontend
+    participant FP as 🔀 Frontend Proxy
+    participant SVC as 🏪 Services
+    participant COL as 📊 OTel Collector
+    participant TEMPO as 🔗 Tempo
+    participant PROM as 📈 Prometheus
+    participant LOKI as 📝 Loki
+    participant GRAF as 📊 Grafana
+    participant SLOTH as 🎯 Sloth
+
+    User->>FE: HTTP Request
+    FE->>FP: Proxy Request
+    FP->>SVC: Service Call
+    
+    Note over SVC: Generate telemetry data
+    SVC->>COL: Traces (OTLP)
+    SVC->>COL: Metrics (OTLP)
+    SVC->>COL: Logs (OTLP)
+    
+    COL->>TEMPO: Store Traces
+    COL->>PROM: Store Metrics
+    COL->>LOKI: Store Logs
+    
+    PROM->>SLOTH: Metrics for SLOs
+    SLOTH->>PROM: Generate SLO Rules
+    
+    GRAF->>TEMPO: Query Traces
+    GRAF->>PROM: Query Metrics & SLOs
+    GRAF->>LOKI: Query Logs
+    
+    GRAF-->>User: Observability Dashboard
+```
+
+### 🎯 Current Deployment State
+
+Our production deployment on OpenShift includes:
+
+```mermaid
+graph TB
+    subgraph "✅ Deployed Components"
+        FE_DEPLOYED[🖥️ Frontend<br/>✅ Running<br/>Route: frontend-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com]
+        FP_DEPLOYED[🔀 Frontend Proxy<br/>✅ Running<br/>Route: frontend-proxy-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com]
+        IP_DEPLOYED[🖼️ Image Provider<br/>✅ Running<br/>Port: 8081]
+        
+        subgraph "Business Services ✅"
+            PC_D[📦 Product Catalog]
+            CART_D[🛒 Cart Service]
+            CHK_D[💳 Checkout]
+            PAY_D[💰 Payment]
+            SHP_D[📦 Shipping]
+            REC_D[🎯 Recommendation]
+            AD_D[📺 Ad Service]
+            CUR_D[💱 Currency]
+            EMAIL_D[📧 Email]
+            QUOTE_D[💬 Quote]
+        end
+        
+        subgraph "Observability Stack ✅"
+            COL_D[📊 OTel Collector<br/>✅ Collecting telemetry]
+            PROM_D[📈 Prometheus<br/>✅ Route: prometheus-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com]
+            TEMPO_D[🔗 Tempo<br/>✅ Storing traces]
+            GRAF_D[📊 Grafana<br/>✅ Route: grafana-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com]
+        end
+        
+        subgraph "Data & Config ✅"
+            REDIS_D[🗃️ Valkey]
+            FLAGD_D[🚩 Feature Flags]
+        end
+    end
+    
+    subgraph "❌ Disabled Components"
+        LG_DISABLED[🔄 Load Generator<br/>❌ Disabled<br/>Resource optimization]
+        KAFKA_DISABLED[📨 Kafka<br/>❌ Disabled<br/>Not required for demo]
+        FRAUD_DISABLED[🛡️ Fraud Detection<br/>❌ Disabled<br/>Kafka dependency]
+        ACCOUNT_DISABLED[💼 Accounting<br/>❌ Disabled<br/>Kafka dependency]
+    end
+    
+    style FE_DEPLOYED fill:#90EE90
+    style FP_DEPLOYED fill:#90EE90
+    style IP_DEPLOYED fill:#90EE90
+    style COL_D fill:#87CEEB
+    style PROM_D fill:#87CEEB
+    style TEMPO_D fill:#87CEEB
+    style GRAF_D fill:#87CEEB
+    style LG_DISABLED fill:#FFB6C1
+    style KAFKA_DISABLED fill:#FFB6C1
+    style FRAUD_DISABLED fill:#FFB6C1
+    style ACCOUNT_DISABLED fill:#FFB6C1
+```
+
+**Key Features of Our Deployment:**
+
 - ✅ **All core services running** with proper security contexts for OpenShift
 - ✅ **Tempo tracing backend** instead of Jaeger (configured in ocp-values.yaml)
 - ✅ **Custom ConfigMaps** for Envoy and Nginx configurations
