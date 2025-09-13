@@ -1,74 +1,242 @@
-# OpenTelemetry Observability Demo — SLO Monitoring with Tempo/Jaeger & Loki/OpenSearch
+# 🔭 OpenTelemetry Observability Demo on OpenShift
 
-A practical, batteries‑included guide to run the **OpenTelemetry Demo** Helm chart with optional backends for **traces (Tempo or Jaeger)** and **logs (Loki or OpenSearch)**, plus **SLO monitoring** using **Sloth** and preloaded **Grafana dashboards**.
+> **A comprehensive guide for junior DevOps engineers to deploy and manage OpenTelemetry Demo with full observability stack on OpenShift Developer Sandbox**
 
-This README is written for junior DevOps / SREs and includes step‑by‑step commands, opinionated defaults, and many diagrams.
+[![Deploy to OpenShift](https://github.com/Mistral-valaise/opentelemetry-observability/actions/workflows/deploy-openshift.yml/badge.svg)](https://github.com/Mistral-valaise/opentelemetry-observability/actions/workflows/deploy-openshift.yml)
+
+This repository provides a production-ready deployment of the **OpenTelemetry Demo** application with complete observability infrastructure including:
+
+- 🎯 **Distributed Tracing** with Tempo
+- 📊 **Metrics Collection** with Prometheus  
+- 📝 **Log Aggregation** with Loki
+- 📈 **Visualization** with Grafana
+- 🎛️ **SLO Monitoring** with Sloth
+- 🚀 **Automated CI/CD** with GitHub Actions
+
+## 📋 Table of Contents
+
+- [🏗️ Architecture Overview](#️-architecture-overview)
+- [🚀 Quick Start](#-quick-start)
+- [🔧 Local Development](#-local-development)
+- [☁️ OpenShift Deployment](#️-openshift-deployment)
+- [📊 Observability Stack](#-observability-stack)
+- [🎯 SLO Monitoring](#-slo-monitoring)
+- [🔄 CI/CD Pipeline](#-cicd-pipeline)
+- [🛠️ Operations Guide](#️-operations-guide)
+- [🐛 Troubleshooting](#-troubleshooting)
+- [📚 Additional Resources](#-additional-resources)
 
 ---
 
-## TL;DR
+## 🏗️ Architecture Overview
 
-- Deploy the OpenTelemetry Demo via Helm.
-- Pick your tracing backend: **Tempo** _or_ **Jaeger**.
-- Pick your logging backend: **Loki** _or_ **OpenSearch**.
-- Enable **Sloth** to generate SLOs (Prometheus rules + alerts) and auto‑provision **Grafana SLO dashboards**.
-- Switch stacks via `values.yaml` toggles.
+### 🏭 System Architecture Overview
 
----
-
-## High‑Level Architecture
+Our OpenTelemetry Demo runs as a distributed microservices application with full observability instrumentation:
 
 ```mermaid
-flowchart LR
-  subgraph "Users & Load"
-    U[Users]
-    LG[Load Generator]
-  end
+flowchart TB
+    subgraph "🌐 External Access"
+        U[👤 Users]
+        CI[🤖 CI/CD Pipeline]
+    end
 
-  subgraph "OpenTelemetry Demo (Microservices)"
-    FE[Frontend]
-    API[APIs]
-    SVC[Services]
-  end
+    subgraph "☁️ OpenShift Cluster (valaise16-dev)"
+        subgraph "🎯 Application Layer"
+            FE[🖥️ Frontend<br/>React App]
+            FP[🔀 Frontend Proxy<br/>Envoy]
+            IP[🖼️ Image Provider<br/>Nginx + OTel]
+        end
+        
+        subgraph "🏪 Business Services"
+            PC[📦 Product Catalog]
+            CART[🛒 Cart Service]
+            CHK[💳 Checkout]
+            PAY[💰 Payment]
+            SHP[📦 Shipping]
+            REC[🎯 Recommendation]
+            AD[📺 Ad Service]
+            CUR[💱 Currency]
+            EMAIL[📧 Email]
+            QUOTE[💬 Quote]
+        end
+        
+        subgraph "🔍 Observability Infrastructure"
+            COL[📊 OTel Collector<br/>Traces/Metrics/Logs]
+            PROM[📈 Prometheus<br/>Metrics Store]
+            TEMPO[🔗 Tempo<br/>Trace Store]
+            LOKI[📝 Loki<br/>Log Store]
+            GRAF[📊 Grafana<br/>Visualization]
+            SLOTH[🎯 Sloth<br/>SLO Controller]
+        end
+        
+        subgraph "🗃️ Data Layer"
+            REDIS[🗃️ Valkey<br/>Cache]
+            FLAGD[🚩 Feature Flags]
+        end
+    end
 
-  U --> FE
-  LG --> FE
-  FE --> API
-  API --> SVC
-
-  subgraph Instrumentation
-    OTELSDK[OTel SDKs]
-    COL[OTel Collector]
-  end
-
-  SVC -- traces/metrics/logs --> OTELSDK
-  OTELSDK --> COL
-
-  subgraph Backends
-    direction TB
-    P[Prometheus]
-    G[Grafana]
-    T[[Tempo]]
-    J[[Jaeger]]
-    L[[Loki]]
-    OS[[OpenSearch]]
-    AM[Alertmanager]
-  end
-
-  COL -- metrics --> P
-  COL -- traces --> T
-  COL -- traces --> J
-  COL -- logs --> L
-  COL -- logs --> OS
-
-  P --> AM
-  P --> G
-  L --> G
-  T --> G
-  J --> G
+    %% User interactions
+    U --> FE
+    U --> FP
+    
+    %% CI/CD deployment
+    CI --> FE
+    CI --> PC
+    CI --> CART
+    
+    %% Application flow
+    FE --> FP
+    FP --> IP
+    FE --> PC
+    FE --> CART
+    FE --> CHK
+    FE --> AD
+    FE --> REC
+    
+    CHK --> PAY
+    CHK --> SHP
+    CHK --> CUR
+    CHK --> EMAIL
+    SHP --> QUOTE
+    CART --> REDIS
+    
+    %% Observability data flow
+    FE -.-> COL
+    PC -.-> COL
+    CART -.-> COL
+    CHK -.-> COL
+    PAY -.-> COL
+    SHP -.-> COL
+    REC -.-> COL
+    AD -.-> COL
+    CUR -.-> COL
+    EMAIL -.-> COL
+    QUOTE -.-> COL
+    FP -.-> COL
+    IP -.-> COL
+    
+    COL --> PROM
+    COL --> TEMPO
+    COL --> LOKI
+    
+    PROM --> GRAF
+    TEMPO --> GRAF
+    LOKI --> GRAF
+    PROM --> SLOTH
+    
+    %% Feature flags
+    FLAGD -.-> PC
+    FLAGD -.-> CART
+    FLAGD -.-> CHK
+    FLAGD -.-> AD
+    FLAGD -.-> REC
 ```
 
-> **Note**: You choose **one** tracing backend (Tempo _or_ Jaeger) and **one** logging backend (Loki _or_ OpenSearch). Metrics always land in Prometheus.
+### 🔄 Data Flow Architecture
+
+This diagram shows how observability data flows through our system:
+
+```mermaid
+sequenceDiagram
+    participant User as 👤 User
+    participant FE as 🖥️ Frontend
+    participant FP as 🔀 Frontend Proxy
+    participant SVC as 🏪 Services
+    participant COL as 📊 OTel Collector
+    participant TEMPO as 🔗 Tempo
+    participant PROM as 📈 Prometheus
+    participant LOKI as 📝 Loki
+    participant GRAF as 📊 Grafana
+    participant SLOTH as 🎯 Sloth
+
+    User->>FE: HTTP Request
+    FE->>FP: Proxy Request
+    FP->>SVC: Service Call
+    
+    Note over SVC: Generate telemetry data
+    SVC->>COL: Traces (OTLP)
+    SVC->>COL: Metrics (OTLP)
+    SVC->>COL: Logs (OTLP)
+    
+    COL->>TEMPO: Store Traces
+    COL->>PROM: Store Metrics
+    COL->>LOKI: Store Logs
+    
+    PROM->>SLOTH: Metrics for SLOs
+    SLOTH->>PROM: Generate SLO Rules
+    
+    GRAF->>TEMPO: Query Traces
+    GRAF->>PROM: Query Metrics & SLOs
+    GRAF->>LOKI: Query Logs
+    
+    GRAF-->>User: Observability Dashboard
+```
+
+### 🎯 Current Deployment State
+
+Our production deployment on OpenShift includes:
+
+```mermaid
+graph TB
+    subgraph "✅ Deployed Components"
+        FE_DEPLOYED[🖥️ Frontend<br/>✅ Running<br/>Route: frontend-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com]
+        FP_DEPLOYED[🔀 Frontend Proxy<br/>✅ Running<br/>Route: frontend-proxy-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com]
+        IP_DEPLOYED[🖼️ Image Provider<br/>✅ Running<br/>Port: 8081]
+        
+        subgraph "Business Services ✅"
+            PC_D[📦 Product Catalog]
+            CART_D[🛒 Cart Service]
+            CHK_D[💳 Checkout]
+            PAY_D[💰 Payment]
+            SHP_D[📦 Shipping]
+            REC_D[🎯 Recommendation]
+            AD_D[📺 Ad Service]
+            CUR_D[💱 Currency]
+            EMAIL_D[📧 Email]
+            QUOTE_D[💬 Quote]
+        end
+        
+        subgraph "Observability Stack ✅"
+            COL_D[📊 OTel Collector<br/>✅ Collecting telemetry]
+            PROM_D[📈 Prometheus<br/>✅ Route: prometheus-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com]
+            TEMPO_D[🔗 Tempo<br/>✅ Storing traces]
+            GRAF_D[📊 Grafana<br/>✅ Route: grafana-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com]
+        end
+        
+        subgraph "Data & Config ✅"
+            REDIS_D[🗃️ Valkey]
+            FLAGD_D[🚩 Feature Flags]
+        end
+    end
+    
+    subgraph "❌ Disabled Components"
+        LG_DISABLED[🔄 Load Generator<br/>❌ Disabled<br/>Resource optimization]
+        KAFKA_DISABLED[📨 Kafka<br/>❌ Disabled<br/>Not required for demo]
+        FRAUD_DISABLED[🛡️ Fraud Detection<br/>❌ Disabled<br/>Kafka dependency]
+        ACCOUNT_DISABLED[💼 Accounting<br/>❌ Disabled<br/>Kafka dependency]
+    end
+    
+    style FE_DEPLOYED fill:#90EE90
+    style FP_DEPLOYED fill:#90EE90
+    style IP_DEPLOYED fill:#90EE90
+    style COL_D fill:#87CEEB
+    style PROM_D fill:#87CEEB
+    style TEMPO_D fill:#87CEEB
+    style GRAF_D fill:#87CEEB
+    style LG_DISABLED fill:#FFB6C1
+    style KAFKA_DISABLED fill:#FFB6C1
+    style FRAUD_DISABLED fill:#FFB6C1
+    style ACCOUNT_DISABLED fill:#FFB6C1
+```
+
+**Key Features of Our Deployment:**
+- ✅ **All core services running** with proper security contexts for OpenShift
+- ✅ **Tempo tracing backend** instead of Jaeger (configured in ocp-values.yaml)
+- ✅ **Custom ConfigMaps** for Envoy and Nginx configurations
+- ✅ **OpenShift Routes** for external access with TLS termination
+- ✅ **Resource optimization** with disabled non-essential components
+- ✅ **Frontend traces** properly routed through frontend-proxy to collector
 
 ---
 

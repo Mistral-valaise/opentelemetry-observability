@@ -2,7 +2,7 @@ apiVersion: sloth.slok.dev/v1
 kind: PrometheusServiceLevel
 metadata:
   name: frontend-latency
-  namespace: opentelemetry-demo
+  namespace: valaise16-dev
   annotations:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation
