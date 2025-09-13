@@ -11,7 +11,7 @@ slos:
     description: "Common SLO based on availability for HTTP request responses."
     sli:
       events:
-        error_query: sum(rate(traces_span_metrics_calls_total{service_name="frontend", status_code="STATUS_CODE_ERROR"}[{{.window}}]))
+        error_query: sum(rate(traces_span_metrics_calls_total{service_name="frontend", http_status_code=~"5.."}[{{.window}}]))
         total_query: sum(rate(traces_span_metrics_calls_total{service_name="frontend"}[{{.window}}]))
     alerting:
       name: FrontendHighErrorRate
