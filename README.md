@@ -15,38 +15,6 @@ This repository provides a production-ready deployment of the **OpenTelemetry De
 
 ## 📋 Table of Contents
 
-- [🏗️ Architecture Overview](#️-architecture-overview)
-- [🚀 Quick Start](#-quick-start)
-- [🔧 Local Development](#-local-development)
-- [☁️ OpenShift Deployment](#️-openshift-deployment)
-- [📊 Observability Stack](#-observability-stack)
-- [🎯 SLO Monitoring](#-slo-monitoring)
-- [🔄 CI/CD Pipeline](#-cicd-pipeline)
-- [🛠️ Operations Guide](#️-operations-guide)
-- [🐛 Troubleshooting](#-troubleshooting)
-- [📚 Additional Resources](#-additional-resources)
-
----
-
-## 🏗️ Architecture Overview
-
-# 🔭 OpenTelemetry Observability Demo on OpenShift
-
-> **A comprehensive guide for junior DevOps engineers to deploy and manage OpenTelemetry Demo with full observability stack on OpenShift Developer Sandbox**
-
-[![Deploy to OpenShift](https://github.com/Mistral-valaise/opentelemetry-observability/actions/workflows/deploy-openshift.yml/badge.svg)](https://github.com/Mistral-valaise/opentelemetry-observability/actions/workflows/deploy-openshift.yml)
-
-This repository provides a production-ready deployment of the **OpenTelemetry Demo** application with complete observability infrastructure including:
-
-- 🎯 **Distributed Tracing** with Tempo
-- 📊 **Metrics Collection** with Prometheus  
-- 📝 **Log Aggregation** with Loki
-- 📈 **Visualization** with Grafana
-- 🎛️ **SLO Monitoring** with Sloth
-- 🚀 **Automated CI/CD** with GitHub Actions
-
-## 📋 Table of Contents
-
 - [Architecture Overview](#architecture-overview)
 - [Quick Start](#quick-start)
 - [Local Development](#local-development)
