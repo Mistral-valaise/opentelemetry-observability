@@ -1005,7 +1005,7 @@ grafana:
       providers:
         - name: 'sloth-remote-provider'
           orgId: 1
-          folder: 'Observability dashboards'
+          folder: 'SLOs Dashboards'
           type: file
           disableDeletion: false
           editable: true
@@ -1013,7 +1013,7 @@ grafana:
             path: /var/lib/grafana/dashboards/sloth-remote
         - name: 'sloth-cm-provider'
           orgId: 1
-          folder: 'SLOs Dashboards'
+          folder: 'Observability dashboards'
           type: file
           disableDeletion: false
           editable: true
