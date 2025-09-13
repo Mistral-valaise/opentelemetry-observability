@@ -73,6 +73,11 @@ jobs:
     runs-on: ubuntu-latest
     name: Security Scan
     needs: validate
+    permissions:
+      # Add necessary permissions for CodeQL/SARIF upload
+      security-events: write
+      actions: read
+      contents: read
     
     steps:
     - name: Checkout code
@@ -86,11 +91,20 @@ jobs:
         format: 'sarif'
         output: 'trivy-results.sarif'
         
-    - name: Upload Trivy scan results
+    - name: Upload Trivy scan results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@v3
-      if: always()
+      if: always() && github.event_name != 'pull_request' # Skip upload for PRs from forks
       with:
         sarif_file: 'trivy-results.sarif'
+        category: 'trivy-config-scan'
+        
+    - name: Upload scan results as artifact (fallback)
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: trivy-security-scan-results
+        path: 'trivy-results.sarif'
+        retention-days: 30
 
   # Deployment job for dev environment
   deploy-dev:
