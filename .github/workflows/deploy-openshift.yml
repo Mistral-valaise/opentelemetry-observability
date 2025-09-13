@@ -150,29 +150,7 @@ jobs:
         echo "Building Helm chart dependencies..."
         cd ${{ env.CHART_PATH }}
         helm dependency build
-        
-    - name: Deploy Tempo (Tracing Backend)
-      run: |
-        echo "Deploying Tempo for distributed tracing..."
-        helm upgrade --install tempo grafana/tempo \
-          --namespace ${{ env.OPENSHIFT_NAMESPACE }} \
-          --set tempo.persistence.enabled=false \
-          --set tempo.storage.trace.backend=local \
-          --set tempo.storage.trace.local.path=/tmp/tempo \
-          --set securityContext.runAsUser=1012310000 \
-          --set securityContext.runAsGroup=1012310000 \
-          --set securityContext.fsGroup=1012310000 \
-          --set securityContext.runAsNonRoot=true \
-          --wait --timeout=5m
-          
-    - name: Deploy Sloth (SLO Controller)
-      run: |
-        echo "Deploying Sloth for SLO monitoring..."
-        helm upgrade --install sloth sloth/sloth \
-          --namespace ${{ env.OPENSHIFT_NAMESPACE }} \
-          --set metrics.enabled=false \
-          --wait --timeout=3m
-          
+
     - name: Deploy OpenTelemetry Demo
       run: |
         echo "Deploying OpenTelemetry Demo application..."
@@ -180,20 +158,6 @@ jobs:
           --namespace ${{ env.OPENSHIFT_NAMESPACE }} \
           -f ${{ env.VALUES_FILE }} \
           --wait --timeout=10m
-          
-    - name: Apply SLO Configurations
-      run: |
-        echo "Applying SLO configurations..."
-        if [ -d "./slo" ]; then
-          for slo_file in ./slo/*.yaml; do
-            if [ -f "$slo_file" ]; then
-              echo "Applying SLO: $slo_file"
-              oc apply -f "$slo_file" -n ${{ env.OPENSHIFT_NAMESPACE }}
-            fi
-          done
-        else
-          echo "No SLO directory found, skipping SLO deployment"
-        fi
         
     - name: Verify Deployment
       run: |
