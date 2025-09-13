@@ -1,12 +1,12 @@
 version: "prometheus/v1"
-service: "myservice"
+service: "frontend"
 labels:
   owner: "frontend-team"
   repo: "frontend-repo"
   tier: "2"
 slos:
   # We allow failing (5xx and 429) 1 request every 1000 requests (99.9%).
-  - name: "frontend-availability"
+  - name: "availability"
     objective: 99.9
     description: "Common SLO based on availability for HTTP request responses."
     sli:
@@ -28,8 +28,8 @@ slos:
         labels:
           severity: "slack"
           slack_channel: "#alerts-myteam"
-  - name: "frontend-latency-250ms"
-    objective: 95
+  - name: "latency-250ms"
+    objective: 99.9
     description: "Common SLO based on latency for HTTP request responses."
     sli:
       events:
