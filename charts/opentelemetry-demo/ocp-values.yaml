@@ -187,6 +187,10 @@ components:
     resources:
       limits:
         memory: 120Mi
+    securityContext:
+      runAsUser: 1012310000
+      runAsGroup: 1012310000
+      runAsNonRoot: true
     initContainers:
       - name: wait-for-kafka
         image: busybox:latest
@@ -261,7 +265,7 @@ components:
         value: product-catalog:8080
       - name: SHIPPING_ADDR
         value: shipping:8080
-      # Remove Kafka dependency since it's disabled
+      # Disable Kafka dependency since it's disabled
       # - name: KAFKA_ADDR
       #   value: kafka:9092
       - name: FLAGD_HOST
@@ -273,6 +277,11 @@ components:
     resources:
       limits:
         memory: 20Mi
+    # Remove init container for Kafka since it's disabled
+    # initContainers:
+    #   - name: wait-for-kafka
+    #     image: busybox:latest
+    #     command: ["sh", "-c", "until nc -z -v -w30 kafka 9092; do echo waiting for kafka; sleep 2; done;"]
 
   currency:
     enabled: true
@@ -324,6 +333,10 @@ components:
     resources:
       limits:
         memory: 300Mi
+    securityContext:
+      runAsUser: 1012310000
+      runAsGroup: 1012310000
+      runAsNonRoot: true
     initContainers:
       - name: wait-for-kafka
         image: busybox:latest
@@ -516,7 +529,7 @@ components:
       - "envsubst '$OTEL_COLLECTOR_HOST $IMAGE_PROVIDER_PORT $OTEL_COLLECTOR_PORT_GRPC $OTEL_SERVICE_NAME' < /etc/nginx-templates/nginx.conf.template > /tmp/nginx/nginx.conf && nginx -c /tmp/nginx/nginx.conf -g 'daemon off;'"
 
   load-generator:
-    enabled: false
+    enabled: true
     useDefault:
       env: true
     service:
@@ -537,7 +550,7 @@ components:
       - name: LOCUST_AUTOSTART
         value: "true"
       - name: LOCUST_BROWSER_TRAFFIC_ENABLED
-        value: "true"
+        value: "false"
       - name: PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION
         value: python
       - name: FLAGD_HOST
@@ -549,6 +562,10 @@ components:
     resources:
       limits:
         memory: 1500Mi
+    securityContext:
+      runAsUser: 1012310000
+      runAsGroup: 1012310000
+      runAsNonRoot: true
 
   payment:
     enabled: true
@@ -729,7 +746,7 @@ components:
   kafka:
     enabled: false
     useDefault:
-      env: true
+      env: false
     replicas: 1
     ports:
       - name: plaintext
@@ -737,10 +754,11 @@ components:
       - name: controller
         value: 9093
     env:
+      # Disable Java OTel agent 
+      - name: JAVA_TOOL_OPTIONS
+        value: ""
       - name: KAFKA_ADVERTISED_LISTENERS
         value: PLAINTEXT://kafka:9092
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: http://$(OTEL_COLLECTOR_NAME):4318
       - name: KAFKA_HEAP_OPTS
         value: "-Xmx400M -Xms400M"
       # Use writable directories
@@ -751,6 +769,11 @@ components:
       # Allow Kafka to write configuration
       - name: KAFKA_CONFIG_DIR
         value: "/tmp/kafka-config"
+      # Completely disable GC logging for OpenShift
+      - name: KAFKA_GC_LOG_OPTS
+        value: " "
+      - name: KAFKA_JVM_PERFORMANCE_OPTS
+        value: " "
     resources:
       limits:
         memory: 600Mi
@@ -777,7 +800,21 @@ components:
     command:
       - "/bin/bash"
       - "-c"
-      - "mkdir -p /tmp/kafka-config && cp -r /opt/kafka/config/* /tmp/kafka-config/ && exec /opt/kafka/bin/kafka-server-start.sh /tmp/kafka-config/kraft/server.properties"
+      - |
+        mkdir -p /tmp/kafka-config /tmp/kafka-logs /tmp/kafka-metadata
+        cp -r /opt/kafka/config/* /tmp/kafka-config/
+        # Create a custom startup script without GC logging
+        cat > /tmp/kafka-start.sh << 'EOF'
+        #!/bin/bash
+        export KAFKA_HEAP_OPTS="-Xmx400M -Xms400M"
+        export KAFKA_JVM_PERFORMANCE_OPTS=""
+        export KAFKA_GC_LOG_OPTS=""
+        export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:/tmp/kafka-config/log4j.properties"
+        export JAVA_TOOL_OPTIONS=""
+        exec java $KAFKA_HEAP_OPTS -cp "/opt/kafka/libs/*" kafka.Kafka /tmp/kafka-config/kraft/server.properties
+        EOF
+        chmod +x /tmp/kafka-start.sh
+        /tmp/kafka-start.sh
 
   valkey-cart:
     enabled: true
