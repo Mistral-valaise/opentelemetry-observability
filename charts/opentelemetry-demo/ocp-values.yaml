@@ -1072,7 +1072,7 @@ prometheus:
         rules:
         - record: slo:sli_error:ratio_rate5m
           expr: |
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", status_code="STATUS_CODE_ERROR"}[5m])))
+            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", http_status_code=~"5.."}[5m])))
             /
             (sum(rate(traces_span_metrics_calls_total{service_name="frontend"}[5m])))
           labels:
@@ -1085,7 +1085,7 @@ prometheus:
             tier: "2"
         - record: slo:sli_error:ratio_rate30m
           expr: |
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", status_code="STATUS_CODE_ERROR"}[30m])))
+            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", http_status_code=~"5.."}[30m])))
             /
             (sum(rate(traces_span_metrics_calls_total{service_name="frontend"}[30m])))
           labels:
@@ -1098,7 +1098,7 @@ prometheus:
             tier: "2"
         - record: slo:sli_error:ratio_rate1h
           expr: |
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", status_code="STATUS_CODE_ERROR"}[1h])))
+            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", http_status_code=~"5.."}[1h])))
             /
             (sum(rate(traces_span_metrics_calls_total{service_name="frontend"}[1h])))
           labels:
@@ -1111,7 +1111,7 @@ prometheus:
             tier: "2"
         - record: slo:sli_error:ratio_rate2h
           expr: |
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", status_code="STATUS_CODE_ERROR"}[2h])))
+            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", http_status_code=~"5.."}[2h])))
             /
             (sum(rate(traces_span_metrics_calls_total{service_name="frontend"}[2h])))
           labels:
@@ -1124,7 +1124,7 @@ prometheus:
             tier: "2"
         - record: slo:sli_error:ratio_rate6h
           expr: |
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", status_code="STATUS_CODE_ERROR"}[6h])))
+            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", http_status_code=~"5.."}[6h])))
             /
             (sum(rate(traces_span_metrics_calls_total{service_name="frontend"}[6h])))
           labels:
@@ -1137,7 +1137,7 @@ prometheus:
             tier: "2"
         - record: slo:sli_error:ratio_rate1d
           expr: |
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", status_code="STATUS_CODE_ERROR"}[1d])))
+            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", http_status_code=~"5.."}[1d])))
             /
             (sum(rate(traces_span_metrics_calls_total{service_name="frontend"}[1d])))
           labels:
@@ -1150,7 +1150,7 @@ prometheus:
             tier: "2"
         - record: slo:sli_error:ratio_rate3d
           expr: |
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", status_code="STATUS_CODE_ERROR"}[3d])))
+            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", http_status_code=~"5.."}[3d])))
             /
             (sum(rate(traces_span_metrics_calls_total{service_name="frontend"}[3d])))
           labels:
@@ -1405,7 +1405,7 @@ prometheus:
       - name: sloth-slo-meta-recordings-frontend-latency-250ms
         rules:
         - record: slo:objective:ratio
-          expr: vector(0.95)
+          expr: vector(0.9990000000000001)
           labels:
             owner: frontend-team
             repo: frontend-repo
@@ -1414,7 +1414,7 @@ prometheus:
             sloth_slo: latency-250ms
             tier: "2"
         - record: slo:error_budget:ratio
-          expr: vector(1-0.95)
+          expr: vector(1-0.9990000000000001)
           labels:
             owner: frontend-team
             repo: frontend-repo
@@ -1472,7 +1472,7 @@ prometheus:
             repo: frontend-repo
             sloth_id: frontend-latency-250ms
             sloth_mode: cli-gen-prom
-            sloth_objective: "95"
+            sloth_objective: "99.9"
             sloth_service: frontend
             sloth_slo: latency-250ms
             sloth_spec: prometheus/v1
@@ -1483,15 +1483,15 @@ prometheus:
         - alert: FrontendHighLatency
           expr: |
             (
-                max(slo:sli_error:ratio_rate5m{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (14.4 * 0.05)) without (sloth_window)
+                max(slo:sli_error:ratio_rate5m{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (14.4 * 0.0009999999999999432)) without (sloth_window)
                 and
-                max(slo:sli_error:ratio_rate1h{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (14.4 * 0.05)) without (sloth_window)
+                max(slo:sli_error:ratio_rate1h{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (14.4 * 0.0009999999999999432)) without (sloth_window)
             )
             or
             (
-                max(slo:sli_error:ratio_rate30m{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (6 * 0.05)) without (sloth_window)
+                max(slo:sli_error:ratio_rate30m{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (6 * 0.0009999999999999432)) without (sloth_window)
                 and
-                max(slo:sli_error:ratio_rate6h{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (6 * 0.05)) without (sloth_window)
+                max(slo:sli_error:ratio_rate6h{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (6 * 0.0009999999999999432)) without (sloth_window)
             )
           labels:
             category: latency
@@ -1505,15 +1505,15 @@ prometheus:
         - alert: FrontendHighLatency
           expr: |
             (
-                max(slo:sli_error:ratio_rate2h{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (3 * 0.05)) without (sloth_window)
+                max(slo:sli_error:ratio_rate2h{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (3 * 0.0009999999999999432)) without (sloth_window)
                 and
-                max(slo:sli_error:ratio_rate1d{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (3 * 0.05)) without (sloth_window)
+                max(slo:sli_error:ratio_rate1d{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (3 * 0.0009999999999999432)) without (sloth_window)
             )
             or
             (
-                max(slo:sli_error:ratio_rate6h{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (1 * 0.05)) without (sloth_window)
+                max(slo:sli_error:ratio_rate6h{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (1 * 0.0009999999999999432)) without (sloth_window)
                 and
-                max(slo:sli_error:ratio_rate3d{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (1 * 0.05)) without (sloth_window)
+                max(slo:sli_error:ratio_rate3d{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (1 * 0.0009999999999999432)) without (sloth_window)
             )
           labels:
             category: latency

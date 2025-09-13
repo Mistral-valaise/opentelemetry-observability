@@ -1,5 +1,27 @@
+# Dependencies
 composer.phar
 /vendor/
+node_modules/
+
+# Temporary files
+*.tmp
+*.bak
+*-old.*
+README-old.md
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Helm
+*.tgz
+charts/*.lock
 
 # Commit your application's lock file https://getcomposer.org/doc/01-basic-usage.md#commit-your-composer-lock-file-to-version-control
 # You may choose to ignore a library lock file http://getcomposer.org/doc/02-libraries.md#lock-file
