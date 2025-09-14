@@ -378,7 +378,7 @@ components:
       - name: WEB_OTEL_SERVICE_NAME
         value: frontend-web
       - name: PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-        value: https://frontend-proxy-pokamr-dev.apps.rm3.7wse.p1.openshiftapps.com/otlp-http/v1/traces
+        value: https://frontend-proxy-pokamr-dev.apps.rm1.0a51.p1.openshiftapps.com/otlp-http/v1/traces
     resources:
       limits:
         memory: 250Mi
@@ -393,7 +393,7 @@ components:
         route.openshift.io/termination: "edge"
         route.openshift.io/insecureEdgeTerminationPolicy: "Redirect"   
       hosts:
-        - host: frontend-pokamr-dev.apps.rm3.7wse.p1.openshiftapps.com
+        - host: frontend-pokamr-dev.apps.rm1.0a51.p1.openshiftapps.com
           paths:
             - path: /
               pathType: Prefix
@@ -466,7 +466,7 @@ components:
     mountedConfigMaps:
       - name: envoy-config
         mountPath: /home/envoy
-        existingConfigMap: otel-demo-envoy-config
+        existingConfigMap: otel-envoy-config
     command:
       - "/bin/sh"
       - "-c"
@@ -478,7 +478,7 @@ components:
         route.openshift.io/termination: "edge"
         route.openshift.io/insecureEdgeTerminationPolicy: "Redirect"   
       hosts:
-        - host: frontend-proxy-pokamr-dev.apps.rm3.7wse.p1.openshiftapps.com
+        - host: frontend-proxy-pokamr-dev.apps.rm1.0a51.p1.openshiftapps.com
           paths:
             - path: /
               pathType: Prefix
@@ -522,7 +522,7 @@ components:
     mountedConfigMaps:
       - name: nginx-template
         mountPath: /etc/nginx-templates
-        existingConfigMap: otel-demo-nginx-config
+        existingConfigMap: otel-nginx-config
     command:
       - "/bin/sh"
       - "-c"
@@ -1558,7 +1558,7 @@ prometheus:
         route.openshift.io/termination: "edge"
         route.openshift.io/insecureEdgeTerminationPolicy: "Redirect"   
       hosts:
-        - prometheus-pokamr-dev.apps.rm3.7wse.p1.openshiftapps.com
+        - prometheus-pokamr-dev.apps.rm1.0a51.p1.openshiftapps.com
       tls: []
     fullnameOverride: prometheus
     extraFlags:
@@ -1614,7 +1614,7 @@ grafana:
       route.openshift.io/insecureEdgeTerminationPolicy: "Redirect"   
 
     hosts:
-      - grafana-pokamr-dev.apps.rm3.7wse.p1.openshiftapps.com
+      - grafana-pokamr-dev.apps.rm1.0a51.p1.openshiftapps.com
     paths:
       - path: /
         pathType: Prefix
