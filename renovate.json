@@ -2,243 +2,72 @@
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
     "description": "Renovate configuration for OpenTelemetry Observability Demo",
     "extends": [
-        "config:recommended",
-        "docker:enableMajor",
-        "helpers:pinGitHubActionsByDigest",
-        ":dependencyDashboard",
-        ":semanticCommits",
-        ":separatePatchReleases"
+        "config:recommended"
     ],
     "timezone": "Europe/Zurich",
     "schedule": [
-        "every day"
+        "after 2am and before 8am"
     ],
+    "postUpdateOptions": [
+        "helmUpdateSubChartArchives"
+    ],
+    "helm-values": {
+        "fileMatch": [
+            "/(^|/)values\\.ya?ml$/",
+            "/(^|/)ocp-values\\.ya?ml$/"
+        ]
+    },
     "labels": [
         "dependencies",
         "renovate"
     ],
     "assignees": [
-        "@Mistral-valaise"
+        "Mistral-valaise"
     ],
     "reviewers": [
-        "@Mistral-valaise"
+        "Mistral-valaise"
     ],
     "prHourlyLimit": 3,
     "prConcurrentLimit": 5,
-    "rebaseWhen": "conflicted",
     "dependencyDashboard": true,
     "dependencyDashboardTitle": "🔧 Dependency Dashboard",
-    "dependencyDashboardLabels": [
-        "dependencies",
-        "dashboard"
-    ],
-    "commitMessagePrefix": "🔄 ",
-    "commitMessageTopic": "{{depName}}",
-    "commitMessageExtra": "to {{newVersion}}",
-    "prTitle": "🔄 Update {{depName}} to {{newVersion}}",
-    "prBodyTemplate": "This PR updates **{{depName}}** from `{{currentVersion}}` to `{{newVersion}}`.\n\n### 📊 Changes Summary:\n- **Package**: {{depName}}\n- **Current Version**: {{currentVersion}}\n- **New Version**: {{newVersion}}\n- **Release Notes**: {{#if releaseNotes}}[View Release Notes]({{releaseNotes}}){{/if}}\n\n### 🔍 What's Changed:\n{{#if updateType}}**Update Type**: {{updateType}}{{/if}}\n\n### 🧪 Testing Required:\n- [ ] Test Helm chart deployment\n- [ ] Verify observability stack functionality\n- [ ] Check service dependencies\n- [ ] Validate OpenShift compatibility\n\n---\n*This PR was generated automatically by Renovate Bot 🤖*",
     "packageRules": [
-        {
-            "description": "Helm chart dependencies - High priority",
-            "matchManagers": [
-                "helm-values",
-                "helmv3"
-            ],
-            "matchFileNames": [
-                "charts/**/Chart.yaml",
-                "charts/**/values.yaml"
-            ],
-            "schedule": [
-                "every day"
-            ],
-            "automerge": false,
-            "labels": [
-                "helm",
-                "dependencies",
-                "high-priority"
-            ],
-            "reviewersFromCodeOwners": false,
-            "addLabels": [
-                "requires-testing"
-            ]
-        },
-        {
-            "description": "OpenTelemetry components - Critical updates",
-            "matchPackageNames": [
-                "opentelemetry-collector",
-                "open-telemetry/opentelemetry-demo",
-                "ghcr.io/open-telemetry/demo"
-            ],
-            "schedule": [
-                "every day"
-            ],
-            "automerge": false,
-            "labels": [
-                "opentelemetry",
-                "critical",
-                "dependencies"
-            ],
-            "addLabels": [
-                "requires-testing",
-                "breaking-change-check"
-            ]
-        },
-        {
-            "description": "Observability stack - Prometheus, Grafana, Jaeger",
-            "matchPackageNames": [
-                "prometheus",
-                "grafana",
-                "jaeger",
-                "tempo",
-                "opensearch"
-            ],
-            "schedule": [
-                "every day"
-            ],
-            "automerge": false,
-            "labels": [
-                "observability",
-                "dependencies"
-            ],
-            "addLabels": [
-                "requires-testing"
-            ]
-        },
         {
             "description": "GitHub Actions",
             "matchManagers": [
                 "github-actions"
             ],
-            "schedule": [
-                "every day"
-            ],
             "automerge": true,
             "labels": [
                 "github-actions",
                 "dependencies"
-            ],
-            "minimumReleaseAge": "3 days"
+            ]
         },
         {
-            "description": "Docker images in values.yaml",
+            "description": "Helm charts",
             "matchManagers": [
-                "regex"
-            ],
-            "matchFileNames": [
-                "charts/**/values.yaml"
-            ],
-            "matchStrings": [
-                "repository:\\s*(?<depName>[^\\s]+)\\s*#\\s*renovate:\\s*(?<datasource>[^\\s]+)",
-                "tag:\\s*[\"']?(?<currentValue>[^\\s\"']+)[\"']?\\s*#\\s*renovate:\\s*(?<datasource>[^\\s]+)"
-            ],
-            "datasourceTemplate": "docker",
-            "schedule": [
-                "every day"
+                "helm-values",
+                "helmv3"
             ],
             "automerge": false,
             "labels": [
-                "docker",
+                "helm",
                 "dependencies"
             ]
-        },
-        {
-            "description": "Major version updates - Manual review required",
-            "matchUpdateTypes": [
-                "major"
-            ],
-            "automerge": false,
-            "schedule": [
-                "every day"
-            ],
-            "labels": [
-                "major-update",
-                "requires-manual-review"
-            ],
-            "addLabels": [
-                "breaking-change",
-                "requires-testing"
-            ],
-            "prBodyNotes": [
-                "⚠️ **MAJOR VERSION UPDATE** - This update may contain breaking changes.",
-                "📋 **Required Actions:**",
-                "- Review the changelog and migration guide",
-                "- Test thoroughly in development environment",
-                "- Check for configuration changes",
-                "- Validate OpenShift compatibility"
-            ]
-        },
-        {
-            "description": "Minor and patch updates - Faster review cycle",
-            "matchUpdateTypes": [
-                "minor",
-                "patch"
-            ],
-            "schedule": [
-                "every day"
-            ],
-            "automerge": false,
-            "labels": [
-                "minor-patch-update"
-            ],
-            "minimumReleaseAge": "1 day"
-        },
-        {
-            "description": "Security updates - Immediate priority",
-            "matchDatasources": [
-                "docker",
-                "helm"
-            ],
-            "vulnerabilityAlerts": true,
-            "schedule": [
-                "at any time"
-            ],
-            "automerge": false,
-            "labels": [
-                "security",
-                "urgent",
-                "dependencies"
-            ],
-            "addLabels": [
-                "requires-immediate-attention"
-            ],
-            "prPriority": 10
         }
     ],
-    "helm-values": {
-        "fileMatch": [
-            "(^|/)values\\.ya?ml$"
-        ]
-    },
     "regexManagers": [
         {
-            "fileMatch": [
-                "(^|/)values\\.ya?ml$"
-            ],
-            "matchStrings": [
-                "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+.+?:\\s*[\"']?(?<currentValue>.+?)[\"']?"
-            ]
-        },
-        {
+            "description": "Update Chart.appVersion via renovate hint comment",
             "fileMatch": [
                 "(^|/)Chart\\.ya?ml$"
             ],
             "matchStrings": [
-                "appVersion:\\s*[\"']?(?<currentValue>[^\\s\"']+)[\"']?\\s*#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)"
-            ]
+                "appVersion:\\s*(?<currentValue>[^#\\n]+)\\s*#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s*depName=(?<depName>[^\\s]+)"
+            ],
+            "datasourceTemplate": "{{{datasource}}}",
+            "depNameTemplate": "{{{depName}}}",
+            "versioningTemplate": "semver"
         }
-    ],
-    "ignoreDeps": [
-        "node",
-        "npm"
-    ],
-    "ignorePaths": [
-        "**/node_modules/**",
-        "**/bower_components/**",
-        "**/vendor/**",
-        "**/.git/**"
-    ],
-    "semanticCommits": "enabled",
-    "semanticCommitType": "chore",
-    "semanticCommitScope": "deps",
-    "gitAuthor": "renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>"
+    ]
 }
