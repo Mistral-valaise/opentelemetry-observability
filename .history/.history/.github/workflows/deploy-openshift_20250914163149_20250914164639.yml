@@ -2,7 +2,7 @@ name: Deploy OpenTelemetry Demo to OpenShift
 
 on:
   push:
-    branches: [ main, develop, feature* ]
+    branches: [ main, develop, feature-* ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -19,8 +19,8 @@ on:
 
 env:
   # OpenShift cluster details
-  OPENSHIFT_SERVER: https://api.rm1.0a51.p1.openshiftapps.com:6443
-  OPENSHIFT_NAMESPACE: pokamr-dev
+  OPENSHIFT_SERVER: https://api.rm3.7wse.p1.openshiftapps.com:6443
+  OPENSHIFT_NAMESPACE: valaise16-dev
   # Application configuration
   APP_NAME: otel-demo
   CHART_PATH: ./charts/opentelemetry-demo

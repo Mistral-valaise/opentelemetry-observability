@@ -378,7 +378,7 @@ components:
       - name: WEB_OTEL_SERVICE_NAME
         value: frontend-web
       - name: PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-        value: https://frontend-proxy-pokamr-dev.apps.rm3.7wse.p1.openshiftapps.com/otlp-http/v1/traces
+        value: https://frontend-proxy-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com/otlp-http/v1/traces
     resources:
       limits:
         memory: 250Mi
@@ -393,7 +393,7 @@ components:
         route.openshift.io/termination: "edge"
         route.openshift.io/insecureEdgeTerminationPolicy: "Redirect"   
       hosts:
-        - host: frontend-pokamr-dev.apps.rm3.7wse.p1.openshiftapps.com
+        - host: frontend-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com
           paths:
             - path: /
               pathType: Prefix
@@ -478,7 +478,7 @@ components:
         route.openshift.io/termination: "edge"
         route.openshift.io/insecureEdgeTerminationPolicy: "Redirect"   
       hosts:
-        - host: frontend-proxy-pokamr-dev.apps.rm3.7wse.p1.openshiftapps.com
+        - host: frontend-proxy-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com
           paths:
             - path: /
               pathType: Prefix
@@ -1047,7 +1047,7 @@ prometheus:
       subjects:
         - kind: ServiceAccount
           name: prometheus
-          namespace: pokamr-dev
+          namespace: valaise16-dev
       roleRef:
         apiGroup: rbac.authorization.k8s.io
         kind: ClusterRole
@@ -1558,7 +1558,7 @@ prometheus:
         route.openshift.io/termination: "edge"
         route.openshift.io/insecureEdgeTerminationPolicy: "Redirect"   
       hosts:
-        - prometheus-pokamr-dev.apps.rm3.7wse.p1.openshiftapps.com
+        - prometheus-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com
       tls: []
     fullnameOverride: prometheus
     extraFlags:
@@ -1614,7 +1614,7 @@ grafana:
       route.openshift.io/insecureEdgeTerminationPolicy: "Redirect"   
 
     hosts:
-      - grafana-pokamr-dev.apps.rm3.7wse.p1.openshiftapps.com
+      - grafana-valaise16-dev.apps.rm3.7wse.p1.openshiftapps.com
     paths:
       - path: /
         pathType: Prefix
