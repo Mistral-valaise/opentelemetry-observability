@@ -30,19 +30,19 @@ Access after port-forward: Web <http://localhost:8080/>, Grafana /grafana, Jaege
 
 ```mermaid
 flowchart LR
-  subgraph App Services
-    FE[Frontend] -->|HTTP/gRPC| OC((OTel Collector))
-    SVC1[Cart] --> OC
-    SVC2[Checkout] --> OC
-    SVC3[Product Catalog] --> OC
-    SVC4[Payment] --> OC
-    SVC5[Recommendation] --> OC
+  subgraph "App Services"
+    FE["Frontend"] -->|"HTTP/gRPC"| OC(("OTel Collector"))
+    SVC1["Cart"] --> OC
+    SVC2["Checkout"] --> OC
+    SVC3["Product Catalog"] --> OC
+    SVC4["Payment"] --> OC
+    SVC5["Recommendation"] --> OC
   end
 
-  OC -->|Traces (OTLP gRPC)| TEMPO[Tempo]
-  OC -->|Metrics (OTLP/Prom)| PROM[Prometheus]
-  PROM -->|Dashboards| GRAF[Grafana]
-  TEMPO -->|Traces| GRAF
+  OC -->|"Traces (OTLP gRPC)"| TEMPO["Tempo"]
+  OC -->|"Metrics [OTLP/Prom]"| PROM["Prometheus"]
+  PROM -->|"Dashboards"| GRAF["Grafana"]
+  TEMPO -->|"Traces"| GRAF
 ```
 
 Key chart pieces in `charts/opentelemetry-demo/Chart.yaml` (auto-updated by Renovate):
