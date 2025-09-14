@@ -4,14 +4,14 @@
     "extends": [
         "config:recommended",
         "docker:enableMajor",
-        "helpers:pinGitHubActionsByDigest",
+        ":pinDigests",
         ":dependencyDashboard",
         ":semanticCommits",
         ":separatePatchReleases"
     ],
     "timezone": "Europe/Zurich",
     "schedule": [
-        "every day"
+        "after 2am and before 8am"
     ],
     "labels": [
         "dependencies",
@@ -35,7 +35,6 @@
     "commitMessagePrefix": "🔄 ",
     "commitMessageTopic": "{{depName}}",
     "commitMessageExtra": "to {{newVersion}}",
-    "prTitle": "🔄 Update {{depName}} to {{newVersion}}",
     "prBodyTemplate": "This PR updates **{{depName}}** from `{{currentVersion}}` to `{{newVersion}}`.\n\n### 📊 Changes Summary:\n- **Package**: {{depName}}\n- **Current Version**: {{currentVersion}}\n- **New Version**: {{newVersion}}\n- **Release Notes**: {{#if releaseNotes}}[View Release Notes]({{releaseNotes}}){{/if}}\n\n### 🔍 What's Changed:\n{{#if updateType}}**Update Type**: {{updateType}}{{/if}}\n\n### 🧪 Testing Required:\n- [ ] Test Helm chart deployment\n- [ ] Verify observability stack functionality\n- [ ] Check service dependencies\n- [ ] Validate OpenShift compatibility\n\n---\n*This PR was generated automatically by Renovate Bot 🤖*",
     "packageRules": [
         {
@@ -49,7 +48,7 @@
                 "charts/**/values.yaml"
             ],
             "schedule": [
-                "every day"
+                "after 2am and before 8am"
             ],
             "automerge": false,
             "labels": [
@@ -70,7 +69,7 @@
                 "ghcr.io/open-telemetry/demo"
             ],
             "schedule": [
-                "every day"
+                "after 2am and before 8am"
             ],
             "automerge": false,
             "labels": [
@@ -93,7 +92,7 @@
                 "opensearch"
             ],
             "schedule": [
-                "every day"
+                "after 2am and before 8am"
             ],
             "automerge": false,
             "labels": [
@@ -110,7 +109,7 @@
                 "github-actions"
             ],
             "schedule": [
-                "every day"
+                "after 2am and before 8am"
             ],
             "automerge": true,
             "labels": [
@@ -122,18 +121,13 @@
         {
             "description": "Docker images in values.yaml",
             "matchManagers": [
-                "regex"
+                "custom.regex"
             ],
             "matchFileNames": [
                 "charts/**/values.yaml"
             ],
-            "matchStrings": [
-                "repository:\\s*(?<depName>[^\\s]+)\\s*#\\s*renovate:\\s*(?<datasource>[^\\s]+)",
-                "tag:\\s*[\"']?(?<currentValue>[^\\s\"']+)[\"']?\\s*#\\s*renovate:\\s*(?<datasource>[^\\s]+)"
-            ],
-            "datasourceTemplate": "docker",
             "schedule": [
-                "every day"
+                "after 2am and before 8am"
             ],
             "automerge": false,
             "labels": [
@@ -148,7 +142,7 @@
             ],
             "automerge": false,
             "schedule": [
-                "every day"
+                "after 2am and before 8am"
             ],
             "labels": [
                 "major-update",
@@ -174,7 +168,7 @@
                 "patch"
             ],
             "schedule": [
-                "every day"
+                "after 2am and before 8am"
             ],
             "automerge": false,
             "labels": [
@@ -188,7 +182,9 @@
                 "docker",
                 "helm"
             ],
-            "vulnerabilityAlerts": true,
+            "vulnerabilityAlerts": {
+                "enabled": true
+            },
             "schedule": [
                 "at any time"
             ],
@@ -209,22 +205,36 @@
             "(^|/)values\\.ya?ml$"
         ]
     },
-    "regexManagers": [
+    "customManagers": [
         {
+            "customType": "regex",
             "fileMatch": [
                 "(^|/)values\\.ya?ml$"
             ],
             "matchStrings": [
                 "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+.+?:\\s*[\"']?(?<currentValue>.+?)[\"']?"
-            ]
+            ],
+            "datasourceTemplate": "docker"
         },
         {
+            "customType": "regex",
             "fileMatch": [
                 "(^|/)Chart\\.ya?ml$"
             ],
             "matchStrings": [
                 "appVersion:\\s*[\"']?(?<currentValue>[^\\s\"']+)[\"']?\\s*#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)"
             ]
+        },
+        {
+            "customType": "regex",
+            "fileMatch": [
+                "(^|/)values\\.ya?ml$"
+            ],
+            "matchStrings": [
+                "repository:\\s*(?<depName>[^\\s]+)\\s*#\\s*renovate:\\s*(?<datasource>[^\\s]+)",
+                "tag:\\s*[\"']?(?<currentValue>[^\\s\"']+)[\"']?\\s*#\\s*renovate:\\s*(?<datasource>[^\\s]+)"
+            ],
+            "datasourceTemplate": "docker"
         }
     ],
     "ignoreDeps": [
