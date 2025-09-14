@@ -34,16 +34,9 @@ default:
     affinity: {}
     tolerations: []
   # Default securityContext for all components
-  securityContext: 
-    runAsUser: 1012310000
-    runAsNonRoot: true
-    runAsGroup: 1012310000
+  securityContext: null
   # Default pod security context for all components
-  podSecurityContext:
-    runAsUser: 1012310000
-    runAsNonRoot: true
-    runAsGroup: 1012310000
-    fsGroup: 1012310000
+  podSecurityContext: null
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -187,10 +180,7 @@ components:
     resources:
       limits:
         memory: 120Mi
-    securityContext:
-      runAsUser: 1012310000
-      runAsGroup: 1012310000
-      runAsNonRoot: true
+    securityContext: null
     initContainers:
       - name: wait-for-kafka
         image: busybox:latest
@@ -333,10 +323,7 @@ components:
     resources:
       limits:
         memory: 300Mi
-    securityContext:
-      runAsUser: 1012310000
-      runAsGroup: 1012310000
-      runAsNonRoot: true
+    securityContext: null
     initContainers:
       - name: wait-for-kafka
         image: busybox:latest
@@ -382,10 +369,7 @@ components:
     resources:
       limits:
         memory: 250Mi
-    securityContext:
-      runAsUser: 1012310000  # nextjs
-      runAsGroup: 1012310000
-      runAsNonRoot: true
+    securityContext: null
     ingress:
       enabled: true
       annotations:
@@ -446,16 +430,7 @@ components:
     resources:
       limits:
         memory: 65Mi
-    securityContext:
-      runAsUser: 1012310000
-      runAsGroup: 1012310000
-      runAsNonRoot: true
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - ALL
-      seccompProfile:
-        type: RuntimeDefault
+    securityContext: null
     # Add writable volumes for envoy
     additionalVolumes:
       - name: envoy-work
@@ -502,16 +477,7 @@ components:
     resources:
       limits:
         memory: 50Mi
-    securityContext:
-      runAsUser: 1012310000
-      runAsGroup: 1012310000
-      runAsNonRoot: true
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - ALL
-      seccompProfile:
-        type: RuntimeDefault
+    securityContext: null
     # Mount writable directory for nginx config
     additionalVolumes:
       - name: nginx-config
@@ -562,10 +528,7 @@ components:
     resources:
       limits:
         memory: 1500Mi
-    securityContext:
-      runAsUser: 1012310000
-      runAsGroup: 1012310000
-      runAsNonRoot: true
+    securityContext: null
 
   payment:
     enabled: true
@@ -585,10 +548,7 @@ components:
     resources:
       limits:
         memory: 120Mi
-    securityContext:
-      runAsUser: 1012310000  # node
-      runAsGroup: 1012310000
-      runAsNonRoot: true
+    securityContext: null
 
   product-catalog:
     enabled: true
@@ -631,10 +591,7 @@ components:
     resources:
       limits:
         memory: 40Mi
-    securityContext:
-      runAsUser: 1012310000  # www-data
-      runAsGroup: 1012310000
-      runAsNonRoot: true
+    securityContext: null
 
   recommendation:
     enabled: true
@@ -777,10 +734,7 @@ components:
     resources:
       limits:
         memory: 600Mi
-    securityContext:
-      runAsUser: 1012310000  # appuser
-      runAsGroup: 1012310000
-      runAsNonRoot: true
+    securityContext: null
     # Add writable volumes for Kafka
     additionalVolumes:
       - name: kafka-logs
@@ -830,10 +784,7 @@ components:
     resources:
       limits:
         memory: 20Mi
-    securityContext:
-      runAsUser: 1012310000  # valkey
-      runAsGroup: 1012310000
-      runAsNonRoot: true
+    securityContext: null
     # Add writable volume for Valkey data and configuration
     additionalVolumes:
       - name: valkey-data
@@ -1546,11 +1497,7 @@ prometheus:
             - targets:
                 - grafana:80
   server:
-    securityContext:
-      runAsUser: 1012310000
-      runAsNonRoot: true
-      runAsGroup: 1012310000
-      fsGroup: 1012310000
+    securityContext: null
     ingress:
       enabled: true
       annotations:
@@ -1601,11 +1548,7 @@ prometheus:
 
 grafana:
   enabled: true
-  securityContext:
-    runAsNonRoot: true
-    runAsUser: 1012310000
-    runAsGroup: 1012310000
-    fsGroup: 1012310000
+  securityContext: null
   ingress:
     enabled: true
     annotations:
@@ -1769,11 +1712,7 @@ grafana:
 # Enable embedded Tempo by default for local use; can be disabled via values
 tempo:
   enabled: true
-  securityContext:
-    runAsUser: 1012310000
-    runAsNonRoot: true
-    runAsGroup: 1012310000
-    fsGroup: 1012310000
+  securityContext: null
   fullnameOverride: tempo
   tempo:
     persistence:

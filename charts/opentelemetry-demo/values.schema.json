@@ -208,7 +208,7 @@
           "$ref": "#/definitions/ContainerResources"
         },
         "securityContext": {
-          "type": "object"
+          "type": ["object", "null"]
         },
         "podSecurityContext": {
           "type": "object"
@@ -298,16 +298,15 @@
           "$ref": "#/definitions/SchedulingRules"
         },
         "securityContext": {
-          "type": "object"
+          "type": ["object", "null"]
         },
         "podSecurityContext": {
-          "type": "object"
+          "type": ["object", "null"]
         }
       },
       "required": [
         "image",
-        "schedulingRules",
-        "securityContext"
+        "schedulingRules"
       ],
       "title": "Default"
     },
