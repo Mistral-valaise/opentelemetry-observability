@@ -201,15 +201,15 @@
         }
     ],
     "helm-values": {
-        "fileMatch": [
-            "(^|/)values\\.ya?ml$"
+        "managerFilePatterns": [
+            "/(^|/)values\\.ya?ml$/"
         ]
     },
     "customManagers": [
         {
             "customType": "regex",
-            "fileMatch": [
-                "(^|/)values\\.ya?ml$"
+            "managerFilePatterns": [
+                "/(^|/)values\\.ya?ml$/"
             ],
             "matchStrings": [
                 "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+.+?:\\s*[\"']?(?<currentValue>.+?)[\"']?"
@@ -218,8 +218,8 @@
         },
         {
             "customType": "regex",
-            "fileMatch": [
-                "(^|/)Chart\\.ya?ml$"
+            "managerFilePatterns": [
+                "/(^|/)Chart\\.ya?ml$/"
             ],
             "matchStrings": [
                 "appVersion:\\s*[\"']?(?<currentValue>[^\\s\"']+)[\"']?\\s*#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)"
@@ -227,8 +227,8 @@
         },
         {
             "customType": "regex",
-            "fileMatch": [
-                "(^|/)values\\.ya?ml$"
+            "managerFilePatterns": [
+                "/(^|/)values\\.ya?ml$/"
             ],
             "matchStrings": [
                 "repository:\\s*(?<depName>[^\\s]+)\\s*#\\s*renovate:\\s*(?<datasource>[^\\s]+)",
