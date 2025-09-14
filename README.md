@@ -39,7 +39,7 @@ flowchart LR
     SVC5["Recommendation"] --> OC
   end
 
-  OC -->|"Traces [OTLP gRPC]"| TEMPO["Tempo"]
+  OC -->|"Traces (OTLP gRPC)"| TEMPO["Tempo"]
   OC -->|"Metrics [OTLP/Prom]"| PROM["Prometheus"]
   PROM -->|"Dashboards"| GRAF["Grafana"]
   TEMPO -->|"Traces"| GRAF
