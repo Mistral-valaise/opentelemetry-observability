@@ -8,6 +8,15 @@
     "schedule": [
         "after 2am and before 8am"
     ],
+    "postUpdateOptions": [
+        "helmUpdateSubChartArchives"
+    ],
+    "helm-values": {
+        "fileMatch": [
+            "/(^|/)values\\.ya?ml$/",
+            "/(^|/)ocp-values\\.ya?ml$/"
+        ]
+    },
     "labels": [
         "dependencies",
         "renovate"
@@ -45,6 +54,20 @@
                 "helm",
                 "dependencies"
             ]
+        }
+    ],
+    "regexManagers": [
+        {
+            "description": "Update Chart.appVersion via renovate hint comment",
+            "fileMatch": [
+                "(^|/)Chart\\.ya?ml$"
+            ],
+            "matchStrings": [
+                "appVersion:\\s*(?<currentValue>[^#\\n]+)\\s*#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s*depName=(?<depName>[^\\s]+)"
+            ],
+            "datasourceTemplate": "{{{datasource}}}",
+            "depNameTemplate": "{{{depName}}}",
+            "versioningTemplate": "semver"
         }
     ]
 }
