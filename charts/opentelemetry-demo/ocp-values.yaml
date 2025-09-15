@@ -831,9 +831,9 @@ opentelemetry-collector:
   fullnameOverride: otel-collector
   mode: deployment
   securityContext:
-    runAsUser: null
+    runAsUser: 1012310000
     runAsNonRoot: true
-    runAsGroup: null
+    runAsGroup: 1012310000
   presets:
     kubernetesAttributes:
       enabled: false
@@ -1129,9 +1129,9 @@ grafana:
   enabled: true
   securityContext:
     runAsNonRoot: true
-    runAsUser: null
-    runAsGroup: null
-    fsGroup: null
+    runAsUser: 1012310000
+    runAsGroup: 1012310000
+    fsGroup: 1012310000
   ingress:
     enabled: true
     annotations:
@@ -1296,10 +1296,10 @@ grafana:
 tempo:
   enabled: true
   securityContext:
-    runAsUser: null
+    runAsUser: 1012310000
     runAsNonRoot: true
-    runAsGroup: null
-    fsGroup: null
+    runAsGroup: 1012310000
+    fsGroup: 1012310000
   fullnameOverride: tempo
   tempo:
     persistence:
