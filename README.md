@@ -1,6 +1,216 @@
 # 🔭 OpenTelemetry Observability Demo (OpenShift)
 
-Short, practical guide for junior DevOps to deploy, observe, and maintain the OTel Demo on OpenShift.
+A practical guide for junior DevOps engineers to deploy, observe,## 🏗️ What Gets Deployed
+
+Complete observability stack with microservices demo:
+
+```mermaid
+graph TB
+    subgraph "🌐 User Traffic"
+        User[End User]
+    end
+    
+    subgraph "🚀 Demo Microservices"
+        Frontend[Frontend]
+        FrontendProxy[Frontend Proxy]
+        ProductCatalog[Product Catalog]
+        Recommendation[Recommendation Service]
+        Cart[Cart Service]
+        Checkout[Checkout Service]
+        Payment[Payment Service]
+        Shipping[Shipping Service]
+        Email[Email Service]
+        Currency[Currency Service]
+        Ad[Ad Service]
+        Quote[Quote Service]
+        ImageProvider[Image Provider]
+        Valkey[Valkey Cache]
+    end
+    
+    subgraph "🔧 Feature Flags"
+        Flagd[Flagd Server]
+    end
+    
+    subgraph "📊 Observability Stack"
+        OTelCol[OpenTelemetry Collector]
+        Grafana[Grafana]
+        Prometheus[Prometheus]
+        Jaeger[Jaeger]
+        Tempo[Tempo]
+    end
+    
+    User --> FrontendProxy
+    FrontendProxy --> Frontend
+    Frontend --> ProductCatalog
+    Frontend --> Recommendation
+    Frontend --> Cart
+    Frontend --> Checkout
+    Frontend --> Ad
+    Frontend --> Currency
+    Frontend --> ImageProvider
+    
+    Cart --> Valkey
+    Checkout --> Payment
+    Checkout --> Shipping
+    Checkout --> Email
+    Quote --> Currency
+    
+    Flagd -.-> Frontend
+    Flagd -.-> ProductCatalog
+    Flagd -.-> Recommendation
+    
+    ProductCatalog --> OTelCol
+    Recommendation --> OTelCol
+    Cart --> OTelCol
+    Checkout --> OTelCol
+    Payment --> OTelCol
+    Shipping --> OTelCol
+    Email --> OTelCol
+    Currency --> OTelCol
+    Ad --> OTelCol
+    Quote --> OTelCol
+    ImageProvider --> OTelCol
+    Frontend --> OTelCol
+    FrontendProxy --> OTelCol
+    
+    OTelCol --> Prometheus
+    OTelCol --> Tempo
+    Grafana --> Prometheus
+    Grafana --> Tempo
+    
+    classDef microservice fill:#e1f5fe
+    classDef observability fill:#f3e5f5
+    classDef featureFlag fill:#fff3e0
+    classDef cache fill:#e8f5e8
+    
+    class Frontend,FrontendProxy,ProductCatalog,Recommendation,Cart,Checkout,Payment,Shipping,Email,Currency,Ad,Quote,ImageProvider microservice
+    class OTelCol,Grafana,Prometheus,Jaeger,Tempo observability
+    class Flagd featureFlag
+    class Valkey cache
+```
+
+## Components Status (Current Configuration)
+
+| Component | Status | Purpose |
+|-----------|--------|---------|
+| ✅ Frontend | Enabled | Web UI for the online shop |
+| ✅ Frontend Proxy | Enabled | Envoy proxy with load balancing |
+| ✅ Product Catalog | Enabled | Product information service |
+| ✅ Recommendation | Enabled | Product recommendation engine |
+| ✅ Cart Service | Enabled | Shopping cart management |
+| ✅ Checkout Service | Enabled | Order processing |
+| ✅ Payment Service | Enabled | Payment processing simulation |
+| ✅ Shipping Service | Enabled | Shipping calculation |
+| ✅ Email Service | Enabled | Email notifications |
+| ✅ Currency Service | Enabled | Currency conversion |
+| ✅ Ad Service | Enabled | Advertisement service |
+| ✅ Quote Service | Enabled | Price quotation |
+| ✅ Image Provider | Enabled | Product image service |
+| ✅ Valkey Cache | Enabled | Redis-compatible caching |
+| ✅ Flagd | Enabled | Feature flag management |
+| ❌ Accounting Service | Disabled | Not included in this deployment |
+| ❌ Fraud Detection | Disabled | Not included in this deployment |
+| ❌ Load Generator | Disabled | Manual testing preferred |
+| ❌ Kafka | Disabled | Uses direct HTTP communication |
+| ❌ OpenSearch | Disabled | Uses Tempo for trace storage |
+
+## Observability Tools
+
+| Tool | Purpose | Access via Route |
+|------|---------|------------------|
+| **Grafana** | Dashboards and visualizations | `/grafana` |
+| **Prometheus** | Metrics collection and alerting | `/prometheus` |
+| **Tempo** | Distributed tracing backend | Internal only |
+| **Jaeger Query** | Trace analysis UI | `/jaeger` |
+| **OpenTelemetry Collector** | Telemetry data processing | Internal only |OpenTelemetry Demo on OpenShift with a complete observability stack.
+
+## 🌐 Deploy to OpenShift Developer Sandbox (Free!)
+
+Perfect for learning and experimentation. No credit card required.
+
+```mermaid
+graph TD
+    A[1. Create Sandbox Account] --> B[2. Get Login Command]
+    B --> C[3. Connect to Project]
+    C --> D[4. Deploy Demo App]
+    D --> E[5. Access Applications]
+    
+    A --> A1[Visit sandbox.redhat.com]
+    A1 --> A2[Sign up with GitHub/Google]
+    
+    B --> B1[OpenShift Console]
+    B1 --> B2[Copy: oc login --token=...]
+    
+    C --> C1[oc project my-namespace]
+    
+    D --> D1[helm upgrade --install otel-demo...]
+    
+    E --> E1[Web UI via Routes]
+    E1 --> E2[Grafana dashboards]
+    E1 --> E3[Jaeger traces]
+```
+
+### Step-by-step Instructions
+
+#### 1. Create a free OpenShift Developer Sandbox account
+
+```bash
+# Visit: https://sandbox.redhat.com/
+# Sign up with your GitHub, Google, or Red Hat account
+# No credit card required - completely free for learning!
+```
+
+#### 2. Get your login command
+
+```bash
+# In the OpenShift Console (top-right menu):
+# Click your username > "Copy login command"
+# Example command you'll get:
+oc login --token=sha256~XXXXX --server=https://api.sandbox-m3.1530.p1.openshiftapps.com:6443
+```
+
+#### 3. Connect to your project namespace
+
+```bash
+# Replace with your actual namespace (usually username-dev or username-stage)
+oc project <my-namespace>
+
+# Example:
+oc project myuser-dev
+```
+
+#### 4. Deploy the demo app with observability stack
+
+```bash
+# Clone this repo first
+git clone https://github.com/Mistral-valaise/opentelemetry-observability.git
+cd opentelemetry-observability
+
+# Deploy (replace <my-namespace> with your actual namespace)
+helm upgrade --install otel-demo charts/opentelemetry-demo \
+  -f charts/opentelemetry-demo/ocp-values.yaml \
+  -n <my-namespace>
+```
+
+#### 5. Access your applications
+
+```bash
+# Get the routes (external URLs)
+oc get routes -n <my-namespace>
+
+# You'll see URLs like:
+# frontend-proxy-myuser-dev.apps.sandbox-m3.1530.p1.openshiftapps.com
+# grafana-myuser-dev.apps.sandbox-m3.1530.p1.openshiftapps.com
+# prometheus-myuser-dev.apps.sandbox-m3.1530.p1.openshiftapps.com
+```
+
+Access points:
+
+- **Web Store**: `https://frontend-proxy-<namespace>.apps.sandbox-m3.1530.p1.openshiftapps.com/`
+- **Grafana**: `https://grafana-<namespace>.apps.sandbox-m3.1530.p1.openshiftapps.com/`
+- **Prometheus**: `https://prometheus-<namespace>.apps.sandbox-m3.1530.p1.openshiftapps.com/`
+
+> 💡 **Tip**: Sandbox environments auto-sleep after 30 days of inactivity. Simply log in again to reactivate!
 
 ## 🚀 Quick start
 
@@ -101,7 +311,121 @@ This repo runs daily scans (2–8am Europe/Zurich) and opens PRs when new versio
 
 See `renovate.json`. Dependency Dashboard issue is enabled.
 
-## 🛠️ Handy ops commands
+## � Troubleshooting Common Issues
+
+### Helm Deployment Warnings
+
+**Problem**: Coalesce warnings about securityContext conflicts
+
+```bash
+# Example warning:
+# WARNING: coalesce.go:XXX: warning: cannot overwrite table with non table for tempo.securityContext
+```
+
+**Solution**: Use empty object `{}` instead of `null` values in `ocp-values.yaml`:
+
+```yaml
+# ✅ Correct - use empty object
+tempo:
+  securityContext: {}
+
+# ❌ Wrong - causes coalesce warnings
+tempo:
+  securityContext: null
+```
+
+### Pod Security Violations
+
+**Problem**: PodSecurity violations in OpenShift restricted environments
+
+```bash
+# Example error:
+# violates PodSecurity "restricted:v1.24": allowPrivilegeEscalation != false
+```
+
+**Solution**: Apply OpenShift security standards in `ocp-values.yaml`:
+
+```yaml
+# Apply to all workloads
+default:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+        - ALL
+```
+
+### Pods Stuck in ContainerCreating
+
+**Problem**: Product-catalog pod stuck waiting for ConfigMap
+
+```bash
+# Check pod status:
+oc describe pod <product-catalog-pod-name>
+# Error: couldn't find key products.json in ConfigMap
+```
+
+**Solution**: Enable flagd component to create required ConfigMaps:
+
+```yaml
+# In ocp-values.yaml
+flagd:
+  enabled: true  # This creates the products ConfigMap
+```
+
+### fsGroup Permission Issues
+
+**Problem**: fsGroup not compatible with OpenShift restricted security
+
+```bash
+# Example error:
+# violates PodSecurity "restricted:v1.24": securityContext.fsGroup
+```
+
+**Solution**: Remove fsGroup from container-level security contexts:
+
+```yaml
+# ✅ Apply fsGroup only at pod level, not container level
+tempo:
+  securityContext: {}  # Remove fsGroup from here
+```
+
+### Checking Deployment Status
+
+```bash
+# Check all pods are running
+oc get pods -n <namespace>
+
+# Check specific pod logs
+oc logs deployment/product-catalog -n <namespace>
+
+# Check for PodSecurity violations
+oc get events -n <namespace> --field-selector type=Warning
+
+# Verify ConfigMaps exist
+oc get configmaps -n <namespace> | grep products
+```
+
+### Resource Requirements Issues
+
+**Problem**: Pods failing due to resource constraints in Sandbox
+
+**Solution**: The `ocp-values.yaml` already includes optimized resource requests:
+
+```yaml
+# Resources are pre-configured for sandbox environments
+default:
+  resources:
+    limits:
+      memory: 400Mi
+```
+
+## �🛠️ Handy ops commands
 
 ```bash
 # Status & logs
