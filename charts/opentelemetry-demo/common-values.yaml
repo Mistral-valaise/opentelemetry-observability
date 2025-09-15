@@ -1,0 +1,446 @@
+# Common values shared across different deployment scenarios
+# This file contains default configurations that can be extended or overridden
+
+default:
+  # List of environment variables applied to all components
+  env:
+    - name: OTEL_SERVICE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: "metadata.labels['app.kubernetes.io/component']"
+    - name: OTEL_COLLECTOR_NAME
+      value: otel-collector
+    - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
+      value: cumulative
+    - name: OTEL_RESOURCE_ATTRIBUTES
+      value: 'service.name=$(OTEL_SERVICE_NAME),service.namespace=opentelemetry-demo,service.version={{ .Chart.AppVersion }}'
+  # Allows overriding and additions to .Values.default.env
+  envOverrides: []
+  image:
+    repository: ghcr.io/open-telemetry/demo
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+  # Default # of replicas for all components
+  replicas: 1
+  # default revisionHistoryLimit for all components
+  revisionHistoryLimit: 10
+  # Default schedulingRules for all components
+  schedulingRules:
+    nodeSelector: {}
+    affinity: {}
+    tolerations: []
+  # Default securityContext for all components
+  securityContext: {}
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  name: ""
+
+# Core components configuration shared across deployments
+components:
+  flagd:
+    enabled: true
+    imageOverride:
+      repository: "ghcr.io/open-feature/flagd"
+      tag: "v0.12.8"
+    useDefault:
+      env: true
+    replicas: 1
+    ports:
+      - name: rpc
+        value: 8013
+      - name: ofrep
+        value: 8016
+    env:
+      - name: FLAGD_METRICS_EXPORTER
+        value: otel
+      - name: FLAGD_OTEL_COLLECTOR_URI
+        value: $(OTEL_COLLECTOR_NAME):4317
+    resources:
+      limits:
+        memory: 75Mi
+    command:
+      - "/flagd-build"
+      - "start"
+      - "--port"
+      - "8013"
+      - "--ofrep-port"
+      - "8016"
+      - "--uri"
+      - "file:./etc/flagd/demo.flagd.json"
+    mountedEmptyDirs:
+      - name: config-rw
+        mountPath: /etc/flagd
+    sidecarContainers:
+      - name: flagd-ui
+        useDefault:
+          env: true
+        service:
+          port: 4000
+        env:
+          - name: FLAGD_METRICS_EXPORTER
+            value: otel
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: http://$(OTEL_COLLECTOR_NAME):4318
+        resources:
+          limits:
+            memory: 100Mi
+        volumeMounts:
+          - name: config-rw
+            mountPath: /app/data
+    initContainers:
+      - name: init-config
+        image: busybox
+        command: ["sh", "-c", "cp /config-ro/demo.flagd.json /config-rw/demo.flagd.json && cat /config-rw/demo.flagd.json"]
+        volumeMounts:
+          - mountPath: /config-ro
+            name: config-ro
+          - mountPath: /config-rw
+            name: config-rw
+    additionalVolumes:
+      - name: config-ro
+        configMap:
+          name: flagd-config
+
+  valkey-cart:
+    enabled: true
+    useDefault:
+      env: true
+    imageOverride:
+      repository: "valkey/valkey"
+      tag: "7.2-alpine"
+    replicas: 1
+    ports:
+      - name: valkey-cart
+        value: 6379
+    resources:
+      limits:
+        memory: 20Mi
+
+# OpenTelemetry Collector common configuration
+opentelemetry-collector:
+  enabled: true
+  image:
+    repository: "otel/opentelemetry-collector-contrib"
+  fullnameOverride: otel-collector
+  mode: deployment
+  presets:
+    kubernetesAttributes:
+      enabled: true
+  resources:
+    limits:
+      memory: 200Mi
+  service:
+    type: ClusterIP
+  ports:
+    metrics:
+      enabled: true
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    opentelemetry_community_demo: "true"
+  config:
+    receivers:
+      otlp:
+        protocols:
+          http:
+            cors:
+              allowed_origins:
+                - "http://*"
+                - "https://*"
+      httpcheck/frontend-proxy:
+        targets:
+          - endpoint: http://frontend-proxy:8080
+      redis:
+        endpoint: "valkey-cart:6379"
+        collection_interval: 10s
+
+    exporters:
+      otlp:
+        endpoint: tempo:4317
+        tls:
+          insecure: true
+      otlphttp/prometheus:
+        endpoint: http://prometheus:9090/api/v1/otlp
+        tls:
+          insecure: true
+      opensearch:
+        logs_index: otel
+        http:
+          endpoint: http://opensearch:9200
+          tls:
+            insecure: true
+
+    processors:
+      transform:
+        error_mode: ignore
+        trace_statements:
+          - context: span
+            statements:
+              - replace_pattern(name, "\\?.*", "")
+              - replace_match(name, "GET /api/products/*", "GET /api/products/{productId}")
+      resource:
+        attributes:
+          - key: service.instance.id
+            from_attribute: k8s.pod.uid
+            action: insert
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+
+    connectors:
+      spanmetrics: {}
+      servicegraph:
+        latency_histogram_buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5]
+        dimensions:
+          - peer_service
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, resource, transform, batch]
+          exporters: [otlp, debug, spanmetrics, servicegraph]
+        metrics:
+          receivers: [httpcheck/frontend-proxy, redis, otlp, spanmetrics, servicegraph]
+          processors: [memory_limiter, resource, batch]
+          exporters: [otlphttp/prometheus, debug]
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, resource, batch]
+          exporters: [debug]
+      telemetry:
+        metrics:
+          level: detailed
+          readers:
+            - periodic:
+                interval: 10000
+                timeout: 5000
+                exporter:
+                  otlp:
+                    protocol: grpc
+                    endpoint: otel-collector:4317
+
+prometheus:
+  enabled: true
+  alertmanager:
+    enabled: false
+  configmapReload:
+    prometheus:
+      enabled: false
+  kube-state-metrics:
+    enabled: false
+  prometheus-node-exporter:
+    enabled: false
+  prometheus-pushgateway:
+    enabled: false
+  serverFiles:
+    prometheus.yml:
+      rule_files:
+        - /etc/config/recording_rules.yml
+        - /etc/config/alerting_rules.yml
+        - /etc/config/rules
+        - /etc/config/alerts
+        - /etc/config/slo-rules/grafana/*.yml
+        - /etc/config/slo-rules/frontend/*.yml
+      scrape_configs:
+        - job_name: prometheus
+          static_configs:
+            - targets:
+                - localhost:9090
+        - job_name: tempo
+          static_configs:
+            - targets:
+                - tempo:3200
+        - job_name: grafana
+          static_configs:
+            - targets:
+                - grafana:80
+  server:
+    fullnameOverride: prometheus
+    extraFlags:
+      - "enable-feature=exemplar-storage"
+      - "web.enable-otlp-receiver"
+      - "web.console.templates=/etc/prometheus/consoles"
+      - "web.console.libraries=/etc/prometheus/console_libraries"
+    tsdb:
+      out_of_order_time_window: 30m
+    otlp:
+      keep_identifying_resource_attributes: true
+      promote_resource_attributes:
+        - service.instance.id
+        - service.name
+        - service.namespace
+        - service.version
+        - cloud.availability_zone
+        - cloud.region
+        - deployment.environment.name
+        - k8s.cluster.name
+        - k8s.container.name
+        - k8s.cronjob.name
+        - k8s.daemonset.name
+        - k8s.deployment.name
+        - k8s.job.name
+        - k8s.namespace.name
+        - k8s.node.name
+        - k8s.pod.name
+        - k8s.replicaset.name
+        - k8s.statefulset.name
+        - container.name
+        - host.name
+        - postgresql.database.name
+        - postgresql.schema.name
+        - postgresql.table.name
+        - postgresql.index.name
+    persistentVolume:
+      enabled: false
+    service:
+      servicePort: 9090
+    resources:
+      limits:
+        memory: 300Mi
+    # Mount SLO rules from ConfigMaps
+    extraConfigmapMounts:
+      - name: prometheus-slo-rules-grafana
+        mountPath: /etc/config/slo-rules/grafana
+        configMap: prometheus-slo-rules-grafana
+        readOnly: true
+      - name: prometheus-slo-rules-frontend
+        mountPath: /etc/config/slo-rules/frontend
+        configMap: prometheus-slo-rules-frontend
+        readOnly: true
+      - name: prometheus-console-templates
+        mountPath: /etc/prometheus/consoles
+        configMap: prometheus-console-templates
+        readOnly: true
+      - name: prometheus-console-libraries
+        mountPath: /etc/prometheus/console_libraries
+        configMap: prometheus-console-libraries
+        readOnly: true
+
+# Common Grafana configuration
+grafana:
+  enabled: true
+  fullnameOverride: grafana
+  testFramework:
+    enabled: false
+  grafana.ini:
+    auth:
+      disable_login_form: true
+    auth.anonymous:
+      enabled: true
+      org_name: Main Org.
+      org_role: Admin
+    server:
+      root_url: "%(protocol)s://%(domain)s:%(http_port)s/grafana"
+      serve_from_sub_path: true
+  adminPassword: admin
+  plugins:
+    - grafana-opensearch-datasource
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: 'sloth-remote-provider'
+          orgId: 1
+          folder: 'SLOs Dashboards'
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/sloth-remote
+        - name: 'sloth-cm-provider'
+          orgId: 1
+          folder: 'Observability dashboards'
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/sloth-cm
+  dashboardsConfigMaps:
+    sloth-cm: grafana-dashboards
+  dashboards:
+    sloth-remote:
+      sloth-slo-detail:
+        gnetId: 14348
+        revision: 1
+        datasource: Prometheus
+      sloth-slos-high-level:
+        gnetId: 14643
+        revision: 1
+        datasource: Prometheus
+  resources:
+    limits:
+      memory: 150Mi
+
+# Enable embedded Tempo by default
+tempo:
+  enabled: true
+  fullnameOverride: tempo
+  tempo:
+    persistence:
+      enabled: false
+    storage:
+      trace:
+        backend: local
+        local:
+          path: /var/tempo
+
+opensearch:
+  enabled: false
+  fullnameOverride: opensearch
+  clusterName: demo-cluster
+  nodeGroup: otel-demo
+  singleNode: true
+  opensearchJavaOpts: "-Xms300m -Xmx300m"
+  persistence:
+    enabled: false
+  extraEnvs:
+    - name: "bootstrap.memory_lock"
+      value: "true"
+    - name: "DISABLE_INSTALL_DEMO_CONFIG"
+      value: "true"
+    - name: "DISABLE_SECURITY_PLUGIN"
+      value: "true"
+  resources:
+    limits:
+      memory: 1100Mi
+
+jaeger:
+  enabled: false
+  fullnameOverride: jaeger
+  provisionDataStore:
+    cassandra: false
+  allInOne:
+    enabled: true
+    args:
+      - "--memory.max-traces=5000"
+      - "--query.base-path=/jaeger/ui"
+      - "--prometheus.server-url=http://prometheus:9090"
+      - "--prometheus.query.normalize-calls=true"
+      - "--prometheus.query.normalize-duration=true"
+    extraEnv:
+      - name: METRICS_STORAGE_TYPE
+        value: prometheus
+      - name: COLLECTOR_OTLP_GRPC_HOST_PORT
+        value: 0.0.0.0:4317
+      - name: COLLECTOR_OTLP_HTTP_HOST_PORT
+        value: 0.0.0.0:4318
+    resources:
+      limits:
+        memory: 400Mi
+  storage:
+    type: memory
+  agent:
+    enabled: false
+  collector:
+    enabled: false
+  query:
+    enabled: false

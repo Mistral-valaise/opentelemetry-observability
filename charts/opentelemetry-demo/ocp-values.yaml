@@ -34,10 +34,18 @@ default:
     affinity: {}
     tolerations: []
   # Default securityContext for all components
-  securityContext: null
+  securityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+    seccompProfile:
+      type: RuntimeDefault
   # Default pod security context for all components
-  podSecurityContext: null
-
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
@@ -283,7 +291,9 @@ components:
       - name: CURRENCY_PORT
         value: "8080"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: http://$(OTEL_COLLECTOR_NAME):4317
+        value: $(OTEL_COLLECTOR_NAME):4317
+      - name: OTEL_EXPORTER_OTLP_INSECURE
+        value: "true"
       - name: VERSION
         value: "{{ .Chart.AppVersion }}"
     resources:
@@ -371,7 +381,7 @@ components:
         memory: 250Mi
     securityContext: null
     ingress:
-      enabled: true
+      enabled: false
       annotations:
         # Let OpenShift create a secure Route
         route.openshift.io/termination: "edge"
@@ -495,7 +505,7 @@ components:
       - "envsubst '$OTEL_COLLECTOR_HOST $IMAGE_PROVIDER_PORT $OTEL_COLLECTOR_PORT_GRPC $OTEL_SERVICE_NAME' < /etc/nginx-templates/nginx.conf.template > /tmp/nginx/nginx.conf && nginx -c /tmp/nginx/nginx.conf -g 'daemon off;'"
 
   load-generator:
-    enabled: true
+    enabled: false
     useDefault:
       env: true
     service:
@@ -544,7 +554,7 @@ components:
       - name: FLAGD_PORT
         value: "8013"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: http://$(OTEL_COLLECTOR_NAME):4317
+        value: http://$(OTEL_COLLECTOR_NAME):4318
     resources:
       limits:
         memory: 120Mi
@@ -820,6 +830,10 @@ opentelemetry-collector:
     repository: "otel/opentelemetry-collector-contrib"
   fullnameOverride: otel-collector
   mode: deployment
+  securityContext:
+    runAsUser: null
+    runAsNonRoot: true
+    runAsGroup: null
   presets:
     kubernetesAttributes:
       enabled: false
@@ -1017,465 +1031,6 @@ prometheus:
   prometheus-pushgateway:
     enabled: false
   serverFiles:
-    recording_rules.yml:
-      groups:
-      - name: sloth-slo-sli-recordings-frontend-availability
-        rules:
-        - record: slo:sli_error:ratio_rate5m
-          expr: |
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", http_status_code=~"5.."}[5m])))
-            /
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend"}[5m])))
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-availability
-            sloth_service: frontend
-            sloth_slo: availability
-            sloth_window: 5m
-            tier: "2"
-        - record: slo:sli_error:ratio_rate30m
-          expr: |
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", http_status_code=~"5.."}[30m])))
-            /
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend"}[30m])))
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-availability
-            sloth_service: frontend
-            sloth_slo: availability
-            sloth_window: 30m
-            tier: "2"
-        - record: slo:sli_error:ratio_rate1h
-          expr: |
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", http_status_code=~"5.."}[1h])))
-            /
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend"}[1h])))
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-availability
-            sloth_service: frontend
-            sloth_slo: availability
-            sloth_window: 1h
-            tier: "2"
-        - record: slo:sli_error:ratio_rate2h
-          expr: |
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", http_status_code=~"5.."}[2h])))
-            /
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend"}[2h])))
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-availability
-            sloth_service: frontend
-            sloth_slo: availability
-            sloth_window: 2h
-            tier: "2"
-        - record: slo:sli_error:ratio_rate6h
-          expr: |
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", http_status_code=~"5.."}[6h])))
-            /
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend"}[6h])))
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-availability
-            sloth_service: frontend
-            sloth_slo: availability
-            sloth_window: 6h
-            tier: "2"
-        - record: slo:sli_error:ratio_rate1d
-          expr: |
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", http_status_code=~"5.."}[1d])))
-            /
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend"}[1d])))
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-availability
-            sloth_service: frontend
-            sloth_slo: availability
-            sloth_window: 1d
-            tier: "2"
-        - record: slo:sli_error:ratio_rate3d
-          expr: |
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend", http_status_code=~"5.."}[3d])))
-            /
-            (sum(rate(traces_span_metrics_calls_total{service_name="frontend"}[3d])))
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-availability
-            sloth_service: frontend
-            sloth_slo: availability
-            sloth_window: 3d
-            tier: "2"
-        - record: slo:sli_error:ratio_rate30d
-          expr: |
-            sum_over_time(slo:sli_error:ratio_rate5m{sloth_id="frontend-availability", sloth_service="frontend", sloth_slo="availability"}[30d])
-            / ignoring (sloth_window)
-            count_over_time(slo:sli_error:ratio_rate5m{sloth_id="frontend-availability", sloth_service="frontend", sloth_slo="availability"}[30d])
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-availability
-            sloth_service: frontend
-            sloth_slo: availability
-            sloth_window: 30d
-            tier: "2"
-      - name: sloth-slo-meta-recordings-frontend-availability
-        rules:
-        - record: slo:objective:ratio
-          expr: vector(0.9990000000000001)
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-availability
-            sloth_service: frontend
-            sloth_slo: availability
-            tier: "2"
-        - record: slo:error_budget:ratio
-          expr: vector(1-0.9990000000000001)
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-availability
-            sloth_service: frontend
-            sloth_slo: availability
-            tier: "2"
-        - record: slo:time_period:days
-          expr: vector(30)
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-availability
-            sloth_service: frontend
-            sloth_slo: availability
-            tier: "2"
-        - record: slo:current_burn_rate:ratio
-          expr: |
-            slo:sli_error:ratio_rate5m{sloth_id="frontend-availability", sloth_service="frontend", sloth_slo="availability"}
-            / on(sloth_id, sloth_slo, sloth_service) group_left
-            slo:error_budget:ratio{sloth_id="frontend-availability", sloth_service="frontend", sloth_slo="availability"}
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-availability
-            sloth_service: frontend
-            sloth_slo: availability
-            tier: "2"
-        - record: slo:period_burn_rate:ratio
-          expr: |
-            slo:sli_error:ratio_rate30d{sloth_id="frontend-availability", sloth_service="frontend", sloth_slo="availability"}
-            / on(sloth_id, sloth_slo, sloth_service) group_left
-            slo:error_budget:ratio{sloth_id="frontend-availability", sloth_service="frontend", sloth_slo="availability"}
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-availability
-            sloth_service: frontend
-            sloth_slo: availability
-            tier: "2"
-        - record: slo:period_error_budget_remaining:ratio
-          expr: 1 - slo:period_burn_rate:ratio{sloth_id="frontend-availability", sloth_service="frontend",
-            sloth_slo="availability"}
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-availability
-            sloth_service: frontend
-            sloth_slo: availability
-            tier: "2"
-        - record: sloth_slo_info
-          expr: vector(1)
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-availability
-            sloth_mode: cli-gen-prom
-            sloth_objective: "99.9"
-            sloth_service: frontend
-            sloth_slo: availability
-            sloth_spec: prometheus/v1
-            sloth_version: v0.12.0
-            tier: "2"
-      - name: sloth-slo-alerts-frontend-availability
-        rules:
-        - alert: FrontendHighErrorRate
-          expr: |
-            (
-                max(slo:sli_error:ratio_rate5m{sloth_id="frontend-availability", sloth_service="frontend", sloth_slo="availability"} > (14.4 * 0.0009999999999999432)) without (sloth_window)
-                and
-                max(slo:sli_error:ratio_rate1h{sloth_id="frontend-availability", sloth_service="frontend", sloth_slo="availability"} > (14.4 * 0.0009999999999999432)) without (sloth_window)
-            )
-            or
-            (
-                max(slo:sli_error:ratio_rate30m{sloth_id="frontend-availability", sloth_service="frontend", sloth_slo="availability"} > (6 * 0.0009999999999999432)) without (sloth_window)
-                and
-                max(slo:sli_error:ratio_rate6h{sloth_id="frontend-availability", sloth_service="frontend", sloth_slo="availability"} > (6 * 0.0009999999999999432)) without (sloth_window)
-            )
-          labels:
-            category: availability
-            routing_key: myteam
-            severity: pageteam
-            sloth_severity: page
-          annotations:
-            summary: High error rate on 'frontend' requests responses
-            title: (page) {{$labels.sloth_service}} {{$labels.sloth_slo}} SLO error budget
-              burn rate is too fast.
-        - alert: FrontendHighErrorRate
-          expr: |
-            (
-                max(slo:sli_error:ratio_rate2h{sloth_id="frontend-availability", sloth_service="frontend", sloth_slo="availability"} > (3 * 0.0009999999999999432)) without (sloth_window)
-                and
-                max(slo:sli_error:ratio_rate1d{sloth_id="frontend-availability", sloth_service="frontend", sloth_slo="availability"} > (3 * 0.0009999999999999432)) without (sloth_window)
-            )
-            or
-            (
-                max(slo:sli_error:ratio_rate6h{sloth_id="frontend-availability", sloth_service="frontend", sloth_slo="availability"} > (1 * 0.0009999999999999432)) without (sloth_window)
-                and
-                max(slo:sli_error:ratio_rate3d{sloth_id="frontend-availability", sloth_service="frontend", sloth_slo="availability"} > (1 * 0.0009999999999999432)) without (sloth_window)
-            )
-          labels:
-            category: availability
-            severity: slack
-            slack_channel: '#alerts-myteam'
-            sloth_severity: ticket
-          annotations:
-            summary: High error rate on 'frontend' requests responses
-            title: (ticket) {{$labels.sloth_service}} {{$labels.sloth_slo}} SLO error budget
-              burn rate is too fast.
-      - name: sloth-slo-sli-recordings-frontend-latency-250ms
-        rules:
-        - record: slo:sli_error:ratio_rate5m
-          expr: |
-            (sum(rate(traces_span_metrics_latency_bucket{service_name="frontend", le="250"}[5m])))
-            /
-            (sum(rate(traces_span_metrics_latency_count{service_name="frontend"}[5m])))
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-latency-250ms
-            sloth_service: frontend
-            sloth_slo: latency-250ms
-            sloth_window: 5m
-            tier: "2"
-        - record: slo:sli_error:ratio_rate30m
-          expr: |
-            (sum(rate(traces_span_metrics_latency_bucket{service_name="frontend", le="250"}[30m])))
-            /
-            (sum(rate(traces_span_metrics_latency_count{service_name="frontend"}[30m])))
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-latency-250ms
-            sloth_service: frontend
-            sloth_slo: latency-250ms
-            sloth_window: 30m
-            tier: "2"
-        - record: slo:sli_error:ratio_rate1h
-          expr: |
-            (sum(rate(traces_span_metrics_latency_bucket{service_name="frontend", le="250"}[1h])))
-            /
-            (sum(rate(traces_span_metrics_latency_count{service_name="frontend"}[1h])))
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-latency-250ms
-            sloth_service: frontend
-            sloth_slo: latency-250ms
-            sloth_window: 1h
-            tier: "2"
-        - record: slo:sli_error:ratio_rate2h
-          expr: |
-            (sum(rate(traces_span_metrics_latency_bucket{service_name="frontend", le="250"}[2h])))
-            /
-            (sum(rate(traces_span_metrics_latency_count{service_name="frontend"}[2h])))
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-latency-250ms
-            sloth_service: frontend
-            sloth_slo: latency-250ms
-            sloth_window: 2h
-            tier: "2"
-        - record: slo:sli_error:ratio_rate6h
-          expr: |
-            (sum(rate(traces_span_metrics_latency_bucket{service_name="frontend", le="250"}[6h])))
-            /
-            (sum(rate(traces_span_metrics_latency_count{service_name="frontend"}[6h])))
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-latency-250ms
-            sloth_service: frontend
-            sloth_slo: latency-250ms
-            sloth_window: 6h
-            tier: "2"
-        - record: slo:sli_error:ratio_rate1d
-          expr: |
-            (sum(rate(traces_span_metrics_latency_bucket{service_name="frontend", le="250"}[1d])))
-            /
-            (sum(rate(traces_span_metrics_latency_count{service_name="frontend"}[1d])))
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-latency-250ms
-            sloth_service: frontend
-            sloth_slo: latency-250ms
-            sloth_window: 1d
-            tier: "2"
-        - record: slo:sli_error:ratio_rate3d
-          expr: |
-            (sum(rate(traces_span_metrics_latency_bucket{service_name="frontend", le="250"}[3d])))
-            /
-            (sum(rate(traces_span_metrics_latency_count{service_name="frontend"}[3d])))
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-latency-250ms
-            sloth_service: frontend
-            sloth_slo: latency-250ms
-            sloth_window: 3d
-            tier: "2"
-        - record: slo:sli_error:ratio_rate30d
-          expr: |
-            sum_over_time(slo:sli_error:ratio_rate5m{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"}[30d])
-            / ignoring (sloth_window)
-            count_over_time(slo:sli_error:ratio_rate5m{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"}[30d])
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-latency-250ms
-            sloth_service: frontend
-            sloth_slo: latency-250ms
-            sloth_window: 30d
-            tier: "2"
-      - name: sloth-slo-meta-recordings-frontend-latency-250ms
-        rules:
-        - record: slo:objective:ratio
-          expr: vector(0.9990000000000001)
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-latency-250ms
-            sloth_service: frontend
-            sloth_slo: latency-250ms
-            tier: "2"
-        - record: slo:error_budget:ratio
-          expr: vector(1-0.9990000000000001)
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-latency-250ms
-            sloth_service: frontend
-            sloth_slo: latency-250ms
-            tier: "2"
-        - record: slo:time_period:days
-          expr: vector(30)
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-latency-250ms
-            sloth_service: frontend
-            sloth_slo: latency-250ms
-            tier: "2"
-        - record: slo:current_burn_rate:ratio
-          expr: |
-            slo:sli_error:ratio_rate5m{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"}
-            / on(sloth_id, sloth_slo, sloth_service) group_left
-            slo:error_budget:ratio{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"}
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-latency-250ms
-            sloth_service: frontend
-            sloth_slo: latency-250ms
-            tier: "2"
-        - record: slo:period_burn_rate:ratio
-          expr: |
-            slo:sli_error:ratio_rate30d{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"}
-            / on(sloth_id, sloth_slo, sloth_service) group_left
-            slo:error_budget:ratio{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"}
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-latency-250ms
-            sloth_service: frontend
-            sloth_slo: latency-250ms
-            tier: "2"
-        - record: slo:period_error_budget_remaining:ratio
-          expr: 1 - slo:period_burn_rate:ratio{sloth_id="frontend-latency-250ms", sloth_service="frontend",
-            sloth_slo="latency-250ms"}
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-latency-250ms
-            sloth_service: frontend
-            sloth_slo: latency-250ms
-            tier: "2"
-        - record: sloth_slo_info
-          expr: vector(1)
-          labels:
-            owner: frontend-team
-            repo: frontend-repo
-            sloth_id: frontend-latency-250ms
-            sloth_mode: cli-gen-prom
-            sloth_objective: "99.9"
-            sloth_service: frontend
-            sloth_slo: latency-250ms
-            sloth_spec: prometheus/v1
-            sloth_version: v0.12.0
-            tier: "2"
-      - name: sloth-slo-alerts-frontend-latency-250ms
-        rules:
-        - alert: FrontendHighLatency
-          expr: |
-            (
-                max(slo:sli_error:ratio_rate5m{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (14.4 * 0.0009999999999999432)) without (sloth_window)
-                and
-                max(slo:sli_error:ratio_rate1h{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (14.4 * 0.0009999999999999432)) without (sloth_window)
-            )
-            or
-            (
-                max(slo:sli_error:ratio_rate30m{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (6 * 0.0009999999999999432)) without (sloth_window)
-                and
-                max(slo:sli_error:ratio_rate6h{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (6 * 0.0009999999999999432)) without (sloth_window)
-            )
-          labels:
-            category: latency
-            routing_key: myteam
-            severity: pageteam
-            sloth_severity: page
-          annotations:
-            summary: High latency on 'frontend' requests responses
-            title: (page) {{$labels.sloth_service}} {{$labels.sloth_slo}} SLO error budget
-              burn rate is too fast.
-        - alert: FrontendHighLatency
-          expr: |
-            (
-                max(slo:sli_error:ratio_rate2h{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (3 * 0.0009999999999999432)) without (sloth_window)
-                and
-                max(slo:sli_error:ratio_rate1d{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (3 * 0.0009999999999999432)) without (sloth_window)
-            )
-            or
-            (
-                max(slo:sli_error:ratio_rate6h{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (1 * 0.0009999999999999432)) without (sloth_window)
-                and
-                max(slo:sli_error:ratio_rate3d{sloth_id="frontend-latency-250ms", sloth_service="frontend", sloth_slo="latency-250ms"} > (1 * 0.0009999999999999432)) without (sloth_window)
-            )
-          labels:
-            category: latency
-            severity: slack
-            slack_channel: '#alerts-myteam'
-            sloth_severity: ticket
-          annotations:
-            summary: High latency on 'frontend' requests responses
-            title: (ticket) {{$labels.sloth_service}} {{$labels.sloth_slo}} SLO error budget
-              burn rate is too fast.
-
     alerting_rules.yml: {}
     prometheus.yml:
       rule_files:
@@ -1483,6 +1038,8 @@ prometheus:
         - /etc/config/alerting_rules.yml
         - /etc/config/rules
         - /etc/config/alerts
+        - /etc/config/slo-rules/grafana/*.yml
+        - /etc/config/slo-rules/frontend/*.yml
       scrape_configs:
         - job_name: prometheus
           static_configs:
@@ -1497,7 +1054,11 @@ prometheus:
             - targets:
                 - grafana:80
   server:
-    securityContext: null
+    securityContext:
+      runAsUser: null
+      runAsNonRoot: true
+      runAsGroup: null
+      fsGroup: null
     ingress:
       enabled: true
       annotations:
@@ -1538,6 +1099,24 @@ prometheus:
         # When deploying on VMs, resource attributes used to identify
         # the host in dashboards and alerts.
         - host.name
+    # Mount SLO rules from ConfigMaps
+    extraConfigmapMounts:
+      - name: prometheus-slo-rules-grafana
+        mountPath: /etc/config/slo-rules/grafana
+        configMap: prometheus-slo-rules-grafana
+        readOnly: true
+      - name: prometheus-slo-rules-frontend
+        mountPath: /etc/config/slo-rules/frontend
+        configMap: prometheus-slo-rules-frontend
+        readOnly: true
+      - name: prometheus-console-templates
+        mountPath: /etc/prometheus/consoles
+        configMap: prometheus-console-templates
+        readOnly: true
+      - name: prometheus-console-libraries
+        mountPath: /etc/prometheus/console_libraries
+        configMap: prometheus-console-libraries
+        readOnly: true
     persistentVolume:
       enabled: false
     service:
@@ -1548,7 +1127,11 @@ prometheus:
 
 grafana:
   enabled: true
-  securityContext: null
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: null
+    runAsGroup: null
+    fsGroup: null
   ingress:
     enabled: true
     annotations:
@@ -1712,7 +1295,11 @@ grafana:
 # Enable embedded Tempo by default for local use; can be disabled via values
 tempo:
   enabled: true
-  securityContext: null
+  securityContext:
+    runAsUser: null
+    runAsNonRoot: true
+    runAsGroup: null
+    fsGroup: null
   fullnameOverride: tempo
   tempo:
     persistence:
