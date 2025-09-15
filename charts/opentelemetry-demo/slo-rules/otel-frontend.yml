@@ -204,9 +204,9 @@ groups:
   rules:
   - record: slo:sli_error:ratio_rate5m
     expr: |-
-      ((sum(increase(traces_service_graph_request_client_seconds_bucket{}[5m])) - sum(increase(traces_service_graph_request_client_seconds_bucket{le="1"}[5m])))
+      ((sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[5m])) - sum(increase(traces_span_metrics_duration_milliseconds_bucket{le="1000"}[5m])))
       /
-      sum(increase(traces_service_graph_request_client_seconds_bucket{}[5m])) > 0 OR on() vector(0)
+      sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[5m])) > 0 OR on() vector(0)
       )
     labels:
       app: otel-shop
@@ -216,9 +216,9 @@ groups:
       sloth_window: 5m
   - record: slo:sli_error:ratio_rate30m
     expr: |-
-      ((sum(increase(traces_service_graph_request_client_seconds_bucket{}[30m])) - sum(increase(traces_service_graph_request_client_seconds_bucket{le="1"}[30m])))
+      ((sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[30m])) - sum(increase(traces_span_metrics_duration_milliseconds_bucket{le="1000"}[30m])))
       /
-      sum(increase(traces_service_graph_request_client_seconds_bucket{}[30m])) > 0 OR on() vector(0)
+      sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[30m])) > 0 OR on() vector(0)
       )
     labels:
       app: otel-shop
@@ -228,9 +228,9 @@ groups:
       sloth_window: 30m
   - record: slo:sli_error:ratio_rate1h
     expr: |-
-      ((sum(increase(traces_service_graph_request_client_seconds_bucket{}[1h])) - sum(increase(traces_service_graph_request_client_seconds_bucket{le="1"}[1h])))
+      ((sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[1h])) - sum(increase(traces_span_metrics_duration_milliseconds_bucket{le="1000"}[1h])))
       /
-      sum(increase(traces_service_graph_request_client_seconds_bucket{}[1h])) > 0 OR on() vector(0)
+      sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[1h])) > 0 OR on() vector(0)
       )
     labels:
       app: otel-shop
@@ -240,9 +240,9 @@ groups:
       sloth_window: 1h
   - record: slo:sli_error:ratio_rate2h
     expr: |-
-      ((sum(increase(traces_service_graph_request_client_seconds_bucket{}[2h])) - sum(increase(traces_service_graph_request_client_seconds_bucket{le="1"}[2h])))
+      ((sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[2h])) - sum(increase(traces_span_metrics_duration_milliseconds_bucket{le="1000"}[2h])))
       /
-      sum(increase(traces_service_graph_request_client_seconds_bucket{}[2h])) > 0 OR on() vector(0)
+      sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[2h])) > 0 OR on() vector(0)
       )
     labels:
       app: otel-shop
@@ -252,9 +252,9 @@ groups:
       sloth_window: 2h
   - record: slo:sli_error:ratio_rate6h
     expr: |-
-      ((sum(increase(traces_service_graph_request_client_seconds_bucket{}[6h])) - sum(increase(traces_service_graph_request_client_seconds_bucket{le="1"}[6h])))
+      ((sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[6h])) - sum(increase(traces_span_metrics_duration_milliseconds_bucket{le="1000"}[6h])))
       /
-      sum(increase(traces_service_graph_request_client_seconds_bucket{}[6h])) > 0 OR on() vector(0)
+      sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[6h])) > 0 OR on() vector(0)
       )
     labels:
       app: otel-shop
@@ -264,9 +264,9 @@ groups:
       sloth_window: 6h
   - record: slo:sli_error:ratio_rate1d
     expr: |-
-      ((sum(increase(traces_service_graph_request_client_seconds_bucket{}[1d])) - sum(increase(traces_service_graph_request_client_seconds_bucket{le="1"}[1d])))
+      ((sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[1d])) - sum(increase(traces_span_metrics_duration_milliseconds_bucket{le="1000"}[1d])))
       /
-      sum(increase(traces_service_graph_request_client_seconds_bucket{}[1d])) > 0 OR on() vector(0)
+      sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[1d])) > 0 OR on() vector(0)
       )
     labels:
       app: otel-shop
@@ -276,9 +276,9 @@ groups:
       sloth_window: 1d
   - record: slo:sli_error:ratio_rate3d
     expr: |-
-      ((sum(increase(traces_service_graph_request_client_seconds_bucket{}[3d])) - sum(increase(traces_service_graph_request_client_seconds_bucket{le="1"}[3d])))
+      ((sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[3d])) - sum(increase(traces_span_metrics_duration_milliseconds_bucket{le="1000"}[3d])))
       /
-      sum(increase(traces_service_graph_request_client_seconds_bucket{}[3d])) > 0 OR on() vector(0)
+      sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[3d])) > 0 OR on() vector(0)
       )
     labels:
       app: otel-shop
@@ -405,9 +405,9 @@ groups:
   rules:
   - record: slo:sli_error:ratio_rate5m
     expr: |-
-      ((sum(increase(traces_service_graph_request_client_seconds_bucket{}[5m])) - sum(increase(traces_service_graph_request_client_seconds_bucket{le="0.25"}[5m])))
+      ((sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[5m])) - sum(increase(traces_span_metrics_duration_milliseconds_bucket{le="100"}[5m])))
       /
-      sum(increase(traces_service_graph_request_client_seconds_bucket{}[5m])) > 0 OR on() vector(0)
+      sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[5m])) > 0 OR on() vector(0)
       )
     labels:
       app: otel-shop
@@ -417,9 +417,9 @@ groups:
       sloth_window: 5m
   - record: slo:sli_error:ratio_rate30m
     expr: |-
-      ((sum(increase(traces_service_graph_request_client_seconds_bucket{}[30m])) - sum(increase(traces_service_graph_request_client_seconds_bucket{le="0.25"}[30m])))
+      ((sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[30m])) - sum(increase(traces_span_metrics_duration_milliseconds_bucket{le="100"}[30m])))
       /
-      sum(increase(traces_service_graph_request_client_seconds_bucket{}[30m])) > 0 OR on() vector(0)
+      sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[30m])) > 0 OR on() vector(0)
       )
     labels:
       app: otel-shop
@@ -429,9 +429,9 @@ groups:
       sloth_window: 30m
   - record: slo:sli_error:ratio_rate1h
     expr: |-
-      ((sum(increase(traces_service_graph_request_client_seconds_bucket{}[1h])) - sum(increase(traces_service_graph_request_client_seconds_bucket{le="0.25"}[1h])))
+      ((sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[1h])) - sum(increase(traces_span_metrics_duration_milliseconds_bucket{le="100"}[1h])))
       /
-      sum(increase(traces_service_graph_request_client_seconds_bucket{}[1h])) > 0 OR on() vector(0)
+      sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[1h])) > 0 OR on() vector(0)
       )
     labels:
       app: otel-shop
@@ -441,9 +441,9 @@ groups:
       sloth_window: 1h
   - record: slo:sli_error:ratio_rate2h
     expr: |-
-      ((sum(increase(traces_service_graph_request_client_seconds_bucket{}[2h])) - sum(increase(traces_service_graph_request_client_seconds_bucket{le="0.25"}[2h])))
+      ((sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[2h])) - sum(increase(traces_span_metrics_duration_milliseconds_bucket{le="100"}[2h])))
       /
-      sum(increase(traces_service_graph_request_client_seconds_bucket{}[2h])) > 0 OR on() vector(0)
+      sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[2h])) > 0 OR on() vector(0)
       )
     labels:
       app: otel-shop
@@ -453,9 +453,9 @@ groups:
       sloth_window: 2h
   - record: slo:sli_error:ratio_rate6h
     expr: |-
-      ((sum(increase(traces_service_graph_request_client_seconds_bucket{}[6h])) - sum(increase(traces_service_graph_request_client_seconds_bucket{le="0.25"}[6h])))
+      ((sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[6h])) - sum(increase(traces_span_metrics_duration_milliseconds_bucket{le="100"}[6h])))
       /
-      sum(increase(traces_service_graph_request_client_seconds_bucket{}[6h])) > 0 OR on() vector(0)
+      sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[6h])) > 0 OR on() vector(0)
       )
     labels:
       app: otel-shop
@@ -465,9 +465,9 @@ groups:
       sloth_window: 6h
   - record: slo:sli_error:ratio_rate1d
     expr: |-
-      ((sum(increase(traces_service_graph_request_client_seconds_bucket{}[1d])) - sum(increase(traces_service_graph_request_client_seconds_bucket{le="0.25"}[1d])))
+      ((sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[1d])) - sum(increase(traces_span_metrics_duration_milliseconds_bucket{le="100"}[1d])))
       /
-      sum(increase(traces_service_graph_request_client_seconds_bucket{}[1d])) > 0 OR on() vector(0)
+      sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[1d])) > 0 OR on() vector(0)
       )
     labels:
       app: otel-shop
@@ -477,9 +477,9 @@ groups:
       sloth_window: 1d
   - record: slo:sli_error:ratio_rate3d
     expr: |-
-      ((sum(increase(traces_service_graph_request_client_seconds_bucket{}[3d])) - sum(increase(traces_service_graph_request_client_seconds_bucket{le="0.25"}[3d])))
+      ((sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[3d])) - sum(increase(traces_span_metrics_duration_milliseconds_bucket{le="100"}[3d])))
       /
-      sum(increase(traces_service_graph_request_client_seconds_bucket{}[3d])) > 0 OR on() vector(0)
+      sum(increase(traces_span_metrics_duration_milliseconds_bucket{}[3d])) > 0 OR on() vector(0)
       )
     labels:
       app: otel-shop
