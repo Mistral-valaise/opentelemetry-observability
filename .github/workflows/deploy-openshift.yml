@@ -2,7 +2,7 @@ name: Deploy OpenTelemetry Demo to OpenShift
 
 on:
   push:
-    branches: [ main, develop, feature-* ]
+    branches: [ main, develop, feature* ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -45,7 +45,6 @@ jobs:
       run: |
         helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
         helm repo add grafana https://grafana.github.io/helm-charts
-        helm repo add sloth https://slok.github.io/sloth
         helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
         helm repo add jaeger https://jaegertracing.github.io/helm-charts
         helm repo add opensearch https://opensearch-project.github.io/helm-charts
@@ -139,7 +138,6 @@ jobs:
         echo "Adding Helm repositories..."
         helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
         helm repo add grafana https://grafana.github.io/helm-charts
-        helm repo add sloth https://slok.github.io/sloth
         helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
         helm repo add jaeger https://jaegertracing.github.io/helm-charts
         helm repo add opensearch https://opensearch-project.github.io/helm-charts
@@ -157,7 +155,7 @@ jobs:
         helm upgrade --install ${{ env.APP_NAME }} ${{ env.CHART_PATH }} \
           --namespace ${{ env.OPENSHIFT_NAMESPACE }} \
           -f ${{ env.VALUES_FILE }} \
-          --wait --timeout=10m
+          --wait --timeout=5m
         
     - name: Verify Deployment
       run: |
