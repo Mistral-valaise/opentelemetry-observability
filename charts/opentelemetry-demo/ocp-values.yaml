@@ -905,41 +905,41 @@ opentelemetry-collector:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
+      # Tail sampling processor for intelligent trace sampling
+      tail_sampling:
+        decision_wait: 10s
+        num_traces: 50000
+        expected_new_traces_per_sec: 100
+        policies:
+          # Policy 1: Keep all traces with errors
+          - name: errors-policy
+            type: status_code
+            status_code:
+              status_codes: [ERROR]
+
+          # Policy 2: Filter out user_agent "Go-http-client/1.1"
+          - name: filter-http-user-agent
+            type: string_attribute
+            string_attribute:
+              key: http.user_agent
+              values: ["Go-http-client/1.1"]
+              invert_match: true
+          
+          # Policy 3: Sample 10% of other traces for baseline visibility
+          - name: probabilistic-policy
+            type: probabilistic
+            probabilistic:
+              sampling_percentage: 100
 
     connectors:
+      # Span metrics connector - key for SLO generation
       spanmetrics:
+        # Histogram configuration for latency SLOs
         histogram:
-          dimensions:
-            - name: url.scheme
-              default: https
           explicit:
-            buckets: [100us, 1ms, 2ms, 6ms, 10ms, 100ms, 250ms, 500ms, 1s, 5s, 10s]
-        dimensions:
-          - name: http.method
-            default: GET
-          - name: http.status_code
-        calls_dimensions:
-          - name: http.url
-            default: /ping
-        exemplars:
-          enabled: true
-        exclude_dimensions: ['status.code']
-        aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"    
-        metrics_flush_interval: 15s
-        metrics_expiration: 5m
-        events:
-          enabled: true
-          dimensions:
-            - name: exception.type
-            - name: exception.message
-        resource_metrics_key_attributes:
-          - service.name
-          - telemetry.sdk.language
-          - telemetry.sdk.name
-        include_instrumentation_scope:
-          - express
+            buckets: [10ms, 100ms, 250ms, 500ms, 750ms, 1s, 2s, 5s]
       servicegraph:
-        latency_histogram_buckets: [10ms, 100ms, 250ms, 1s, 5s]
+        latency_histogram_buckets: [10ms, 100ms, 250ms, 500ms, 750ms, 1s, 2s, 5s]
         dimensions:
           - peer_service
 
