@@ -200,179 +200,179 @@ groups:
         rate is over expected.'
       title: (ticket) {{$labels.sloth_service}} {{$labels.sloth_slo}} SLO error budget
         burn rate is too fast.
-- name: sloth-slo-sli-recordings-grafana-latency-250ms
+- name: sloth-slo-sli-recordings-grafana-latency-50ms
   rules:
   - record: slo:sli_error:ratio_rate5m
     expr: |-
-      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[5m])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.025"}[5m])))
+      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[5m])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.05"}[5m])))
       /
       sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[5m])) > 0 OR on() vector(0)
       )
     labels:
       app: grafana
-      sloth_id: grafana-latency-250ms
+      sloth_id: grafana-latency-50ms
       sloth_service: grafana
-      sloth_slo: latency-250ms
+      sloth_slo: latency-50ms
       sloth_window: 5m
   - record: slo:sli_error:ratio_rate30m
     expr: |-
-      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[30m])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.025"}[30m])))
+      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[30m])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.05"}[30m])))
       /
       sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[30m])) > 0 OR on() vector(0)
       )
     labels:
       app: grafana
-      sloth_id: grafana-latency-250ms
+      sloth_id: grafana-latency-50ms
       sloth_service: grafana
-      sloth_slo: latency-250ms
+      sloth_slo: latency-50ms
       sloth_window: 30m
   - record: slo:sli_error:ratio_rate1h
     expr: |-
-      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[1h])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.025"}[1h])))
+      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[1h])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.05"}[1h])))
       /
       sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[1h])) > 0 OR on() vector(0)
       )
     labels:
       app: grafana
-      sloth_id: grafana-latency-250ms
+      sloth_id: grafana-latency-50ms
       sloth_service: grafana
-      sloth_slo: latency-250ms
+      sloth_slo: latency-50ms
       sloth_window: 1h
   - record: slo:sli_error:ratio_rate2h
     expr: |-
-      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[2h])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.025"}[2h])))
+      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[2h])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.05"}[2h])))
       /
       sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[2h])) > 0 OR on() vector(0)
       )
     labels:
       app: grafana
-      sloth_id: grafana-latency-250ms
+      sloth_id: grafana-latency-50ms
       sloth_service: grafana
-      sloth_slo: latency-250ms
+      sloth_slo: latency-50ms
       sloth_window: 2h
   - record: slo:sli_error:ratio_rate6h
     expr: |-
-      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[6h])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.025"}[6h])))
+      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[6h])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.05"}[6h])))
       /
       sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[6h])) > 0 OR on() vector(0)
       )
     labels:
       app: grafana
-      sloth_id: grafana-latency-250ms
+      sloth_id: grafana-latency-50ms
       sloth_service: grafana
-      sloth_slo: latency-250ms
+      sloth_slo: latency-50ms
       sloth_window: 6h
   - record: slo:sli_error:ratio_rate1d
     expr: |-
-      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[1d])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.025"}[1d])))
+      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[1d])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.05"}[1d])))
       /
       sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[1d])) > 0 OR on() vector(0)
       )
     labels:
       app: grafana
-      sloth_id: grafana-latency-250ms
+      sloth_id: grafana-latency-50ms
       sloth_service: grafana
-      sloth_slo: latency-250ms
+      sloth_slo: latency-50ms
       sloth_window: 1d
   - record: slo:sli_error:ratio_rate3d
     expr: |-
-      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[3d])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.025"}[3d])))
+      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[3d])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.05"}[3d])))
       /
       sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[3d])) > 0 OR on() vector(0)
       )
     labels:
       app: grafana
-      sloth_id: grafana-latency-250ms
+      sloth_id: grafana-latency-50ms
       sloth_service: grafana
-      sloth_slo: latency-250ms
+      sloth_slo: latency-50ms
       sloth_window: 3d
   - record: slo:sli_error:ratio_rate30d
     expr: |
-      sum_over_time(slo:sli_error:ratio_rate5m{sloth_id="grafana-latency-250ms", sloth_service="grafana", sloth_slo="latency-250ms"}[30d])
+      sum_over_time(slo:sli_error:ratio_rate5m{sloth_id="grafana-latency-50ms", sloth_service="grafana", sloth_slo="latency-50ms"}[30d])
       / ignoring (sloth_window)
-      count_over_time(slo:sli_error:ratio_rate5m{sloth_id="grafana-latency-250ms", sloth_service="grafana", sloth_slo="latency-250ms"}[30d])
+      count_over_time(slo:sli_error:ratio_rate5m{sloth_id="grafana-latency-50ms", sloth_service="grafana", sloth_slo="latency-50ms"}[30d])
     labels:
       app: grafana
-      sloth_id: grafana-latency-250ms
+      sloth_id: grafana-latency-50ms
       sloth_service: grafana
-      sloth_slo: latency-250ms
+      sloth_slo: latency-50ms
       sloth_window: 30d
-- name: sloth-slo-meta-recordings-grafana-latency-250ms
+- name: sloth-slo-meta-recordings-grafana-latency-50ms
   rules:
   - record: slo:objective:ratio
-    expr: vector(0.98)
+    expr: vector(0.99)
     labels:
       app: grafana
-      sloth_id: grafana-latency-250ms
+      sloth_id: grafana-latency-50ms
       sloth_service: grafana
-      sloth_slo: latency-250ms
+      sloth_slo: latency-50ms
   - record: slo:error_budget:ratio
-    expr: vector(1-0.98)
+    expr: vector(1-0.99)
     labels:
       app: grafana
-      sloth_id: grafana-latency-250ms
+      sloth_id: grafana-latency-50ms
       sloth_service: grafana
-      sloth_slo: latency-250ms
+      sloth_slo: latency-50ms
   - record: slo:time_period:days
     expr: vector(30)
     labels:
       app: grafana
-      sloth_id: grafana-latency-250ms
+      sloth_id: grafana-latency-50ms
       sloth_service: grafana
-      sloth_slo: latency-250ms
+      sloth_slo: latency-50ms
   - record: slo:current_burn_rate:ratio
     expr: |
-      slo:sli_error:ratio_rate5m{sloth_id="grafana-latency-250ms", sloth_service="grafana", sloth_slo="latency-250ms"}
+      slo:sli_error:ratio_rate5m{sloth_id="grafana-latency-50ms", sloth_service="grafana", sloth_slo="latency-50ms"}
       / on(sloth_id, sloth_slo, sloth_service) group_left
-      slo:error_budget:ratio{sloth_id="grafana-latency-250ms", sloth_service="grafana", sloth_slo="latency-250ms"}
+      slo:error_budget:ratio{sloth_id="grafana-latency-50ms", sloth_service="grafana", sloth_slo="latency-50ms"}
     labels:
       app: grafana
-      sloth_id: grafana-latency-250ms
+      sloth_id: grafana-latency-50ms
       sloth_service: grafana
-      sloth_slo: latency-250ms
+      sloth_slo: latency-50ms
   - record: slo:period_burn_rate:ratio
     expr: |
-      slo:sli_error:ratio_rate30d{sloth_id="grafana-latency-250ms", sloth_service="grafana", sloth_slo="latency-250ms"}
+      slo:sli_error:ratio_rate30d{sloth_id="grafana-latency-50ms", sloth_service="grafana", sloth_slo="latency-50ms"}
       / on(sloth_id, sloth_slo, sloth_service) group_left
-      slo:error_budget:ratio{sloth_id="grafana-latency-250ms", sloth_service="grafana", sloth_slo="latency-250ms"}
+      slo:error_budget:ratio{sloth_id="grafana-latency-50ms", sloth_service="grafana", sloth_slo="latency-50ms"}
     labels:
       app: grafana
-      sloth_id: grafana-latency-250ms
+      sloth_id: grafana-latency-50ms
       sloth_service: grafana
-      sloth_slo: latency-250ms
+      sloth_slo: latency-50ms
   - record: slo:period_error_budget_remaining:ratio
-    expr: 1 - slo:period_burn_rate:ratio{sloth_id="grafana-latency-250ms", sloth_service="grafana",
-      sloth_slo="latency-250ms"}
+    expr: 1 - slo:period_burn_rate:ratio{sloth_id="grafana-latency-50ms", sloth_service="grafana",
+      sloth_slo="latency-50ms"}
     labels:
       app: grafana
-      sloth_id: grafana-latency-250ms
+      sloth_id: grafana-latency-50ms
       sloth_service: grafana
-      sloth_slo: latency-250ms
+      sloth_slo: latency-50ms
   - record: sloth_slo_info
     expr: vector(1)
     labels:
       app: grafana
-      sloth_id: grafana-latency-250ms
+      sloth_id: grafana-latency-50ms
       sloth_mode: cli-gen-prom
-      sloth_objective: "98"
+      sloth_objective: "99"
       sloth_service: grafana
-      sloth_slo: latency-250ms
+      sloth_slo: latency-50ms
       sloth_spec: prometheus/v1
       sloth_version: v0.12.0
-- name: sloth-slo-alerts-grafana-latency-250ms
+- name: sloth-slo-alerts-grafana-latency-50ms
   rules:
   - alert: grafana HighErrorRate
     expr: |
       (
-          max(slo:sli_error:ratio_rate5m{sloth_id="grafana-latency-250ms", sloth_service="grafana", sloth_slo="latency-250ms"} > (14.4 * 0.02)) without (sloth_window)
+          max(slo:sli_error:ratio_rate5m{sloth_id="grafana-latency-50ms", sloth_service="grafana", sloth_slo="latency-50ms"} > (14.4 * 0.01)) without (sloth_window)
           and
-          max(slo:sli_error:ratio_rate1h{sloth_id="grafana-latency-250ms", sloth_service="grafana", sloth_slo="latency-250ms"} > (14.4 * 0.02)) without (sloth_window)
+          max(slo:sli_error:ratio_rate1h{sloth_id="grafana-latency-50ms", sloth_service="grafana", sloth_slo="latency-50ms"} > (14.4 * 0.01)) without (sloth_window)
       )
       or
       (
-          max(slo:sli_error:ratio_rate30m{sloth_id="grafana-latency-250ms", sloth_service="grafana", sloth_slo="latency-250ms"} > (6 * 0.02)) without (sloth_window)
+          max(slo:sli_error:ratio_rate30m{sloth_id="grafana-latency-50ms", sloth_service="grafana", sloth_slo="latency-50ms"} > (6 * 0.01)) without (sloth_window)
           and
-          max(slo:sli_error:ratio_rate6h{sloth_id="grafana-latency-250ms", sloth_service="grafana", sloth_slo="latency-250ms"} > (6 * 0.02)) without (sloth_window)
+          max(slo:sli_error:ratio_rate6h{sloth_id="grafana-latency-50ms", sloth_service="grafana", sloth_slo="latency-50ms"} > (6 * 0.01)) without (sloth_window)
       )
     labels:
       sloth_severity: page
@@ -384,15 +384,15 @@ groups:
   - alert: grafana HighErrorRate
     expr: |
       (
-          max(slo:sli_error:ratio_rate2h{sloth_id="grafana-latency-250ms", sloth_service="grafana", sloth_slo="latency-250ms"} > (3 * 0.02)) without (sloth_window)
+          max(slo:sli_error:ratio_rate2h{sloth_id="grafana-latency-50ms", sloth_service="grafana", sloth_slo="latency-50ms"} > (3 * 0.01)) without (sloth_window)
           and
-          max(slo:sli_error:ratio_rate1d{sloth_id="grafana-latency-250ms", sloth_service="grafana", sloth_slo="latency-250ms"} > (3 * 0.02)) without (sloth_window)
+          max(slo:sli_error:ratio_rate1d{sloth_id="grafana-latency-50ms", sloth_service="grafana", sloth_slo="latency-50ms"} > (3 * 0.01)) without (sloth_window)
       )
       or
       (
-          max(slo:sli_error:ratio_rate6h{sloth_id="grafana-latency-250ms", sloth_service="grafana", sloth_slo="latency-250ms"} > (1 * 0.02)) without (sloth_window)
+          max(slo:sli_error:ratio_rate6h{sloth_id="grafana-latency-50ms", sloth_service="grafana", sloth_slo="latency-50ms"} > (1 * 0.01)) without (sloth_window)
           and
-          max(slo:sli_error:ratio_rate3d{sloth_id="grafana-latency-250ms", sloth_service="grafana", sloth_slo="latency-250ms"} > (1 * 0.02)) without (sloth_window)
+          max(slo:sli_error:ratio_rate3d{sloth_id="grafana-latency-50ms", sloth_service="grafana", sloth_slo="latency-50ms"} > (1 * 0.01)) without (sloth_window)
       )
     labels:
       sloth_severity: ticket
@@ -405,7 +405,7 @@ groups:
   rules:
   - record: slo:sli_error:ratio_rate5m
     expr: |-
-      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[5m])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.01"}[5m])))
+      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[5m])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.1"}[5m])))
       /
       sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[5m])) > 0 OR on() vector(0)
       )
@@ -417,7 +417,7 @@ groups:
       sloth_window: 5m
   - record: slo:sli_error:ratio_rate30m
     expr: |-
-      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[30m])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.01"}[30m])))
+      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[30m])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.1"}[30m])))
       /
       sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[30m])) > 0 OR on() vector(0)
       )
@@ -429,7 +429,7 @@ groups:
       sloth_window: 30m
   - record: slo:sli_error:ratio_rate1h
     expr: |-
-      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[1h])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.01"}[1h])))
+      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[1h])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.1"}[1h])))
       /
       sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[1h])) > 0 OR on() vector(0)
       )
@@ -441,7 +441,7 @@ groups:
       sloth_window: 1h
   - record: slo:sli_error:ratio_rate2h
     expr: |-
-      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[2h])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.01"}[2h])))
+      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[2h])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.1"}[2h])))
       /
       sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[2h])) > 0 OR on() vector(0)
       )
@@ -453,7 +453,7 @@ groups:
       sloth_window: 2h
   - record: slo:sli_error:ratio_rate6h
     expr: |-
-      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[6h])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.01"}[6h])))
+      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[6h])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.1"}[6h])))
       /
       sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[6h])) > 0 OR on() vector(0)
       )
@@ -465,7 +465,7 @@ groups:
       sloth_window: 6h
   - record: slo:sli_error:ratio_rate1d
     expr: |-
-      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[1d])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.01"}[1d])))
+      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[1d])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.1"}[1d])))
       /
       sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[1d])) > 0 OR on() vector(0)
       )
@@ -477,7 +477,7 @@ groups:
       sloth_window: 1d
   - record: slo:sli_error:ratio_rate3d
     expr: |-
-      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[3d])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.01"}[3d])))
+      ((sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[3d])) - sum(increase(grafana_http_request_duration_seconds_bucket{le="0.1"}[3d])))
       /
       sum(increase(grafana_http_request_duration_seconds_bucket{le="+Inf"}[3d])) > 0 OR on() vector(0)
       )
@@ -501,14 +501,14 @@ groups:
 - name: sloth-slo-meta-recordings-grafana-latency-100ms
   rules:
   - record: slo:objective:ratio
-    expr: vector(0.99)
+    expr: vector(0.9990000000000001)
     labels:
       app: grafana
       sloth_id: grafana-latency-100ms
       sloth_service: grafana
       sloth_slo: latency-100ms
   - record: slo:error_budget:ratio
-    expr: vector(1-0.99)
+    expr: vector(1-0.9990000000000001)
     labels:
       app: grafana
       sloth_id: grafana-latency-100ms
@@ -555,7 +555,7 @@ groups:
       app: grafana
       sloth_id: grafana-latency-100ms
       sloth_mode: cli-gen-prom
-      sloth_objective: "99"
+      sloth_objective: "99.9"
       sloth_service: grafana
       sloth_slo: latency-100ms
       sloth_spec: prometheus/v1
@@ -565,15 +565,15 @@ groups:
   - alert: grafana HighErrorRate
     expr: |
       (
-          max(slo:sli_error:ratio_rate5m{sloth_id="grafana-latency-100ms", sloth_service="grafana", sloth_slo="latency-100ms"} > (14.4 * 0.01)) without (sloth_window)
+          max(slo:sli_error:ratio_rate5m{sloth_id="grafana-latency-100ms", sloth_service="grafana", sloth_slo="latency-100ms"} > (14.4 * 0.0009999999999999432)) without (sloth_window)
           and
-          max(slo:sli_error:ratio_rate1h{sloth_id="grafana-latency-100ms", sloth_service="grafana", sloth_slo="latency-100ms"} > (14.4 * 0.01)) without (sloth_window)
+          max(slo:sli_error:ratio_rate1h{sloth_id="grafana-latency-100ms", sloth_service="grafana", sloth_slo="latency-100ms"} > (14.4 * 0.0009999999999999432)) without (sloth_window)
       )
       or
       (
-          max(slo:sli_error:ratio_rate30m{sloth_id="grafana-latency-100ms", sloth_service="grafana", sloth_slo="latency-100ms"} > (6 * 0.01)) without (sloth_window)
+          max(slo:sli_error:ratio_rate30m{sloth_id="grafana-latency-100ms", sloth_service="grafana", sloth_slo="latency-100ms"} > (6 * 0.0009999999999999432)) without (sloth_window)
           and
-          max(slo:sli_error:ratio_rate6h{sloth_id="grafana-latency-100ms", sloth_service="grafana", sloth_slo="latency-100ms"} > (6 * 0.01)) without (sloth_window)
+          max(slo:sli_error:ratio_rate6h{sloth_id="grafana-latency-100ms", sloth_service="grafana", sloth_slo="latency-100ms"} > (6 * 0.0009999999999999432)) without (sloth_window)
       )
     labels:
       sloth_severity: page
@@ -585,15 +585,15 @@ groups:
   - alert: grafana HighErrorRate
     expr: |
       (
-          max(slo:sli_error:ratio_rate2h{sloth_id="grafana-latency-100ms", sloth_service="grafana", sloth_slo="latency-100ms"} > (3 * 0.01)) without (sloth_window)
+          max(slo:sli_error:ratio_rate2h{sloth_id="grafana-latency-100ms", sloth_service="grafana", sloth_slo="latency-100ms"} > (3 * 0.0009999999999999432)) without (sloth_window)
           and
-          max(slo:sli_error:ratio_rate1d{sloth_id="grafana-latency-100ms", sloth_service="grafana", sloth_slo="latency-100ms"} > (3 * 0.01)) without (sloth_window)
+          max(slo:sli_error:ratio_rate1d{sloth_id="grafana-latency-100ms", sloth_service="grafana", sloth_slo="latency-100ms"} > (3 * 0.0009999999999999432)) without (sloth_window)
       )
       or
       (
-          max(slo:sli_error:ratio_rate6h{sloth_id="grafana-latency-100ms", sloth_service="grafana", sloth_slo="latency-100ms"} > (1 * 0.01)) without (sloth_window)
+          max(slo:sli_error:ratio_rate6h{sloth_id="grafana-latency-100ms", sloth_service="grafana", sloth_slo="latency-100ms"} > (1 * 0.0009999999999999432)) without (sloth_window)
           and
-          max(slo:sli_error:ratio_rate3d{sloth_id="grafana-latency-100ms", sloth_service="grafana", sloth_slo="latency-100ms"} > (1 * 0.01)) without (sloth_window)
+          max(slo:sli_error:ratio_rate3d{sloth_id="grafana-latency-100ms", sloth_service="grafana", sloth_slo="latency-100ms"} > (1 * 0.0009999999999999432)) without (sloth_window)
       )
     labels:
       sloth_severity: ticket
@@ -602,5 +602,3 @@ groups:
         rate is over expected.'
       title: (ticket) {{$labels.sloth_service}} {{$labels.sloth_slo}} SLO error budget
         burn rate is too fast.
-
-
