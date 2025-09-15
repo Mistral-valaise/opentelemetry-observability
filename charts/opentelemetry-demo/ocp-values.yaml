@@ -1059,6 +1059,11 @@ prometheus:
       runAsNonRoot: true
       runAsGroup: null
       fsGroup: null
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
     configmapReload:
       # --- BEGIN OpenShift SCC Fixes for Prometheus Configmap Reload ---
       containerSecurityContext:
