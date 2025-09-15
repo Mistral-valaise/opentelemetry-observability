@@ -1059,6 +1059,17 @@ prometheus:
       runAsNonRoot: true
       runAsGroup: null
       fsGroup: null
+    configmapReload:
+      # --- BEGIN OpenShift SCC Fixes for Prometheus Configmap Reload ---
+      containerSecurityContext:
+        runAsUser: null
+        runAsGroup: null
+        runAsNonRoot: true
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+        seccompProfile:
+          type: RuntimeDefault
     ingress:
       enabled: true
       annotations:
@@ -1302,6 +1313,12 @@ tempo:
     fsGroup: 1012310000
   fullnameOverride: tempo
   tempo:
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
     persistence:
       enabled: false
     storage:
