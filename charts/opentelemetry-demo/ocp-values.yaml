@@ -1039,6 +1039,8 @@ prometheus:
         - /etc/config/alerting_rules.yml
         - /etc/config/rules
         - /etc/config/alerts
+        - /etc/config/slo-rules/grafana/*.yml
+        - /etc/config/slo-rules/frontend/*.yml
       scrape_configs:
         - job_name: prometheus
           static_configs:
@@ -1098,6 +1100,24 @@ prometheus:
         # When deploying on VMs, resource attributes used to identify
         # the host in dashboards and alerts.
         - host.name
+    # Mount SLO rules from ConfigMaps
+    extraConfigmapMounts:
+      - name: prometheus-slo-rules-grafana
+        mountPath: /etc/config/slo-rules/grafana
+        configMap: prometheus-slo-rules-grafana
+        readOnly: true
+      - name: prometheus-slo-rules-frontend
+        mountPath: /etc/config/slo-rules/frontend
+        configMap: prometheus-slo-rules-frontend
+        readOnly: true
+      - name: prometheus-console-templates
+        mountPath: /etc/prometheus/consoles
+        configMap: prometheus-console-templates
+        readOnly: true
+      - name: prometheus-console-libraries
+        mountPath: /etc/prometheus/console_libraries
+        configMap: prometheus-console-libraries
+        readOnly: true
     persistentVolume:
       enabled: false
     service:

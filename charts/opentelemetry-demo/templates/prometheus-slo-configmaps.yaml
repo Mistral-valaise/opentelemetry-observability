@@ -1,0 +1,48 @@
+{{- if .Values.prometheus.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-slo-rules-grafana
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "otel-demo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: prometheus-slo-rules
+data:
+  grafana.yml: |-
+{{ (.Files.Get "slo-rules/grafana.yml") | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-slo-rules-frontend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "otel-demo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: prometheus-slo-rules
+data:
+  otel-frontend.yml: |-
+{{ (.Files.Get "slo-rules/otel-frontend.yml") | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-console-templates
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "otel-demo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: prometheus-console-templates
+data:
+{{ (.Files.Get "prom-console/console-templates-data.yaml") | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-console-libraries
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "otel-demo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: prometheus-console-libraries
+data:
+{{ (.Files.Get "prom-console/console-libraries-simple.yaml") | indent 2 }}
+{{- end }}

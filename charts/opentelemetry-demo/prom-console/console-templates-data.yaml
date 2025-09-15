@@ -1,0 +1,509 @@
+index.html: |
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Prometheus Console - SLO Dashboard</title>
+      <style>
+          body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              margin: 20px;
+              background-color: #f5f5f5;
+          }
+          .header {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              padding: 20px;
+              border-radius: 8px;
+              margin-bottom: 20px;
+          }
+          .card {
+              background: white;
+              padding: 20px;
+              margin: 10px 0;
+              border-radius: 8px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          }
+          .metric {
+              display: inline-block;
+              margin: 10px;
+              padding: 15px;
+              background: #e8f4fd;
+              border-radius: 6px;
+              min-width: 200px;
+          }
+          .status-good { background-color: #d4edda; color: #155724; }
+          .status-warning { background-color: #fff3cd; color: #856404; }
+          .status-critical { background-color: #f8d7da; color: #721c24; }
+          .nav-link {
+              display: inline-block;
+              margin: 0 10px;
+              padding: 8px 16px;
+              background: rgba(255,255,255,0.2);
+              color: white;
+              text-decoration: none;
+              border-radius: 4px;
+          }
+          .nav-link:hover { background: rgba(255,255,255,0.3); }
+      </style>
+  </head>
+  <body>
+      <div class="header">
+          <h1>🎯 SRE SLO Reports</h1>
+          <nav>
+              <a href="/graph" class="nav-link">📊 Explore</a>
+              <a href="/targets" class="nav-link">🎯 Targets</a>
+              <a href="/config" class="nav-link">⚙️ Config</a>
+              <a href="/consoles/slo-report.html" class="nav-link">📋 SLO Report Overview</a>
+          </nav>
+      </div>
+
+      <div class="card">
+          <h2>📈 System Overview</h2>
+          <p>Welcome to the SRE SLO Reports. This Page provides an overview of your Service Level Objectives.</p>
+
+          <div class="metric">
+              <h3>Total SLOs Monitored</h3>
+              <div id="total-slos">Loading...</div>
+          </div>
+
+          <div class="metric">
+              <h3>Services Under Monitoring</h3>
+              <div id="total-services">Loading...</div>
+          </div>
+
+          <div class="metric">
+              <h3>Active Alerts</h3>
+              <div id="active-alerts">Loading...</div>
+          </div>
+      </div>
+
+      <div class="card">
+          <h2>🔍 Quick Actions</h2>
+          <ul>
+              <li><a href="/consoles/slo-report.html">📊 View Detailed SLO Report</a></li>
+              <li><a href="/graph?g0.expr=up&g0.tab=1">🔍 Check Service Health (up metric)</a></li>
+              <li><a href="/graph?g0.expr=rate(prometheus_http_requests_total[5m])&g0.tab=1">📈 Prometheus Request Rate</a></li>
+              <li><a href="/alerts">⚠️ View All Alerts</a></li>
+          </ul>
+      </div>
+
+      <div class="card">
+          <h2>📋 Available Consoles</h2>
+          <ul>
+              <li><a href="/consoles/slo-report.html">SLO Report Overview</a></li>
+              <li><a href="/consoles/prometheus.html">Prometheus Server Status</a></li>
+          </ul>
+      </div>
+
+      <script>
+          // Simple JavaScript to load basic metrics
+          const loadMetric = async (query, elementId) => {
+              try {
+                  const response = await fetch(`/api/v1/query?query=${encodeURIComponent(query)}`);
+                  const data = await response.json();
+                  if (data.status === 'success' && data.data.result.length > 0) {
+                      return data.data.result[0].value[1];
+                  }
+                  return '0';
+              } catch (error) {
+                  return 'Error';
+              }
+          };
+
+          // Load basic metrics
+          Promise.all([
+              loadMetric('count(sloth_slo_info)', 'total-slos'),
+              loadMetric('count(group by (sloth_service) (sloth_slo_info))', 'total-services'),
+              loadMetric('count(ALERTS{alertstate="firing"})', 'active-alerts')
+          ]).then(([slos, services, alerts]) => {
+              document.getElementById('total-slos').innerHTML = `<strong>${slos || '0'}</strong>`;
+              document.getElementById('total-services').innerHTML = `<strong>${services || '0'}</strong>`;
+              document.getElementById('active-alerts').innerHTML = `<strong>${alerts || '0'}</strong>`;
+          });
+      </script>
+  </body>
+  </html>
+
+slo-report.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SLO Report - Prometheus Console</title>
+        <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                margin: 20px;
+                background-color: #f5f5f5;
+            }
+            .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+            }
+            .card {
+                background: white;
+                padding: 20px;
+                margin: 10px 0;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .slo-item {
+                border: 1px solid #ddd;
+                margin: 10px 0;
+                padding: 15px;
+                border-radius: 6px;
+            }
+            .slo-healthy { border-left: 4px solid #28a745; }
+            .slo-warning { border-left: 4px solid #ffc107; }
+            .slo-critical { border-left: 4px solid #dc3545; }
+            .metric-value { font-size: 1.2em; font-weight: bold; }
+            .nav-link {
+                display: inline-block;
+                margin: 0 10px;
+                padding: 8px 16px;
+                background: rgba(255,255,255,0.2);
+                color: white;
+                text-decoration: none;
+                border-radius: 4px;
+            }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+            th { background-color: #f8f9fa; }
+            .low { background-color: rgb(61, 170, 105);}
+            .medium { background-color: rgb(255, 230, 0);}
+            .high { background-color: rgb(255, 60, 0);}
+        </style>
+        <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    </head>
+    <body>
+        <div class="header">
+            <h1>📊 SRE SLO Report Overview</h1>
+            <nav>
+                <a href="/consoles/index.html" class="nav-link">🏠 Home</a>
+                <a href="/graph" class="nav-link">📈 Explore</a>
+                <a href="/targets" class="nav-link">🎯 Targets</a>
+                <a href="/alerts" class="nav-link">⚠️ Alerts</a>
+            </nav>
+        </div>
+
+        <div class="card">
+        <h2>📅 Monthly Report Summary</h2>
+        <div id="report-summary">Loading...</div>
+        </div>
+
+        <div class="card">
+            <h2>🎯 Service Level Objectives Summary</h2>
+            <p>Real-time overview of all monitored SLOs across your services.</p>
+
+            <div id="slo-summary">Loading SLO data...</div>
+        </div>
+
+        <div class="card">
+            <h2>📋 Detailed SLO Status</h2>
+            <table id="slo-table">
+                <thead>
+                    <tr>
+                        <th>Service</th>
+                        <th>SLO Name</th>
+                        <th>Objective</th>
+                        <th>Current Performance</th>
+                        <th>Error Budget</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="slo-table-body">
+                    <tr><td colspan="7">Loading...</td></tr>
+                </tbody>
+            </table>
+            <br>
+            <button id="exportButton">Export Report</button>
+        </div>
+
+        <script>
+            async function loadSLOData() {
+                try {
+                    // Query for SLO info
+                    const sloInfoResponse = await fetch('/api/v1/query?query=sloth_slo_info');
+                    const sloInfoData = await sloInfoResponse.json();
+
+                    if (sloInfoData.status !== 'success') {
+                        document.getElementById('slo-summary').innerHTML =
+                            '<div class="slo-item slo-warning">⚠️ No SLO data available. Ensure Sloth SLO framework is deployed.</div>';
+                        document.getElementById('slo-table-body').innerHTML =
+                            '<tr><td colspan="7">No SLO data found. Check if Sloth is properly configured.</td></tr>';
+                        return;
+                    }
+
+                    const slos = sloInfoData.data.result;
+                    let summaryHtml = `
+                        <div class="slo-item slo-healthy">
+                            <strong>📊 Total SLOs:</strong> <span class="metric-value">${slos.length}</span>
+                        </div>
+                    `;
+
+                    // Group by service
+                    const serviceGroups = {};
+                    slos.forEach(slo => {
+                        const service = slo.metric.sloth_service || 'unknown';
+                        if (!serviceGroups[service]) serviceGroups[service] = [];
+                        serviceGroups[service].push(slo);
+                    });
+
+                    summaryHtml += `
+                        <div class="slo-item slo-healthy">
+                            <strong>🏢 Services:</strong> <span class="metric-value">${Object.keys(serviceGroups).length}</span>
+                        </div>
+                    `;
+
+                    document.getElementById('slo-summary').innerHTML = summaryHtml;
+
+                    // Build detailed table
+                    let tableHtml = '';
+                    for (const [service, serviceSlos] of Object.entries(serviceGroups)) {
+                        for (const slo of serviceSlos) {
+                            const sloName = slo.metric.sloth_slo || 'unknown';
+                            const objective = slo.metric.sloth_objective || 'N/A';
+
+                            tableHtml += `
+                                <tr>
+                                    <td><strong>${service}</strong></td>
+                                    <td>${sloName}</td>
+                                    <td>${objective}%</td>
+                                    <td><span id="perf-${service}-${sloName}">Loading...</span></td>
+                                    <td><span id="budget-${service}-${sloName}">Loading...</span></td>
+                                    <td><span id="status-${service}-${sloName}">🔄</span></td>
+                                    <td>
+                                        <a href="/graph?g0.expr=slo%3Asli_error%3Aratio_rate30d%7Bsloth_service%3D%22${service}%22%2Csloth_slo%3D%22${sloName}%22%7D&g0.tab=0" target="_blank">📊 View</a>
+                                    </td>
+                                </tr>
+                            `;
+
+                            // Load performance data for this SLO
+                            loadSLOMetrics(service, sloName);
+                        }
+                    }
+
+                    document.getElementById('slo-table-body').innerHTML = tableHtml;
+
+                } catch (error) {
+                    console.error('Error loading SLO data:', error);
+                    document.getElementById('slo-summary').innerHTML =
+                        '<div class="slo-item slo-critical">❌ Error loading SLO data</div>';
+                }
+            }
+
+            async function loadSLOMetrics(service, sloName) {
+                try {
+                    // Load error rate
+                    const errorRateQuery = `slo:sli_error:ratio_rate30d{sloth_service="${service}",sloth_slo="${sloName}"}`;
+                    const errorRateResponse = await fetch(`/api/v1/query?query=${encodeURIComponent(errorRateQuery)}`);
+                    const errorRateData = await errorRateResponse.json();
+
+                    // Load error budget
+                    const budgetQuery = `slo:period_error_budget_remaining:ratio{sloth_service="${service}",sloth_slo="${sloName}"}`;
+                    const budgetResponse = await fetch(`/api/v1/query?query=${encodeURIComponent(budgetQuery)}`);
+                    const budgetData = await budgetResponse.json();
+
+                    // Calculate availability
+                    let availability = 'N/A';
+                    let budget = 'N/A';
+                    let status = '❓';
+
+                    if (errorRateData.status === 'success' && errorRateData.data.result.length > 0) {
+                        const errorRate = parseFloat(errorRateData.data.result[0].value[1]);
+                        availability = ((1 - errorRate) * 100).toFixed(3) + '%';
+                    }
+
+                    if (budgetData.status === 'success' && budgetData.data.result.length > 0) {
+                        const budgetValue = parseFloat(budgetData.data.result[0].value[1]);
+                        budget = (budgetValue * 100).toFixed(2) + '%';
+
+                        // Determine status
+                        if (budgetValue > 0.5) {
+                            status = '✅ Healthy';
+                        } else if (budgetValue > 0.1) {
+                            status = '⚠️ Warning';
+                        } else {
+                            status = '🚨 Critical';
+                        }
+                    }
+
+                    document.getElementById(`perf-${service}-${sloName}`).innerHTML = availability;
+                    document.getElementById(`budget-${service}-${sloName}`).innerHTML = budget;
+                    document.getElementById(`status-${service}-${sloName}`).innerHTML = status;
+
+                } catch (error) {
+                    console.error(`Error loading metrics for ${service}/${sloName}:`, error);
+                }
+            }
+
+            function colorCells() {
+                const table = document.getElementById("slo-table");
+                for (let i = 1; i < table.rows.length; i++) { // Start from 1 to skip header
+                    // budget is 5th cell (index 4), perf is 4th cell (index 3)
+                    const perfCell = table.rows[i].cells[3];
+                    const budgetCell = table.rows[i].cells[4];
+
+                    const perfValue = parseFloat(perfCell.textContent);
+                    if (!isNaN(perfValue)) {
+                        if (perfValue >= 90) {
+                            perfCell.className = "low";
+                        } else if (perfValue >= 0) {
+                            perfCell.className = "medium";
+                        } else {
+                            perfCell.className = "high";
+                        }
+                    }
+
+                    const budgetValue = parseFloat(budgetCell.textContent);
+                    if (!isNaN(budgetValue)) {
+                        if (budgetValue >= 90) {
+                            budgetCell.className = "low";
+                        } else if (budgetValue >= 0) {
+                            budgetCell.className = "medium";
+                        } else {
+                            budgetCell.className = "high";
+                        }
+                    }
+                }
+            }
+
+            async function loadReportSummary() {
+                const now = new Date();
+                const year = now.getFullYear();
+                const monthName = now.toLocaleString('default', { month: 'long' });
+                const daysInMonth = new Date(year, now.getMonth() + 1, 0).getDate();
+                const timePeriod = `${monthName} 1-${daysInMonth}, ${year}`;
+
+                const query = async (q) => {
+                    try {
+                        const response = await fetch(`/api/v1/query?query=${encodeURIComponent(q)}`);
+                        const data = await response.json();
+                        if (data.status === 'success' && data.data.result.length > 0) {
+                            return data.data.result[0].value[1];
+                        }
+                        return '0';
+                    } catch (e) {
+                        return 'Error';
+                    }
+                };
+
+                const sloViolations = await query('count(slo:period_error_budget_remaining:ratio < 0)');
+
+                let summaryHTML = `
+                    <p><strong>Time period:</strong> ${timePeriod}</p>
+                    <p><strong>Number of active SLO violations:</strong> ${sloViolations}</p>
+                `;
+                document.getElementById('report-summary').innerHTML = summaryHTML;
+            }
+
+            // New function to export the full report
+            function exportFullReportToXLSX(filename) {
+                // Create a new workbook
+                const wb = XLSX.utils.book_new();
+
+                // 1. Create the Report Summary sheet from the div content
+                const summaryDiv = document.getElementById('report-summary');
+                // Extract the text content from the paragraphs
+                const pTags = summaryDiv.querySelectorAll('p');
+                const summaryData = [
+                    ['Time period', pTags[0].textContent.replace('Time period:', '').trim()],
+                    ['Number of active SLO violations', pTags[1].textContent.replace('Number of active SLO violations:', '').trim()]
+                ];
+                const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+                XLSX.utils.book_append_sheet(wb, wsSummary, 'Report Summary');
+
+                // 2. Create the Detailed SLO Status sheet from the table
+                const sloTable = document.getElementById('slo-table');
+                const wsSLOTable = XLSX.utils.table_to_sheet(sloTable, { raw: true });
+                XLSX.utils.book_append_sheet(wb, wsSLOTable, 'Detailed SLO Status');
+
+                // Write the workbook to a file
+                XLSX.writeFile(wb, filename);
+            }
+
+            // Load data when page loads
+            async function init() {
+                await loadReportSummary();
+                await loadSLOData();
+                // Delay colorCells to allow data to be loaded and rendered
+                setTimeout(colorCells, 2000);
+            }
+
+            init();
+
+            // Add event listener to the "Export Report" button
+            document.getElementById('exportButton').addEventListener('click', () => {
+                exportFullReportToXLSX('sre-report.xlsx');
+            });
+        </script>
+    </body>
+    </html>
+
+prometheus.html: |
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <title>Prometheus Status</title>
+      <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .metric { margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 4px; }
+      </style>
+  </head>
+  <body>
+      <h1>🔧 Prometheus Server Status</h1>
+      <div class="metric">
+          <strong>Server Status:</strong> ✅ Running
+      </div>
+      <div class="metric">
+          <strong>Version:</strong> <span id="version">Loading...</span>
+      </div>
+      <div class="metric">
+          <strong>Uptime:</strong> <span id="uptime">Loading...</span>
+      </div>
+      <div class="metric">
+          <strong>Scrape Targets:</strong> <span id="targets">Loading...</span>
+      </div>
+
+      <script>
+          // Load basic Prometheus metrics
+          fetch('/api/v1/query?query=prometheus_build_info')
+              .then(r => r.json())
+              .then(data => {
+                  if (data.data.result.length > 0) {
+                      document.getElementById('version').textContent =
+                          data.data.result[0].metric.version || 'Unknown';
+                  }
+              });
+
+          fetch('/api/v1/query?query=time()-process_start_time_seconds')
+              .then(r => r.json())
+              .then(data => {
+                  if (data.data.result.length > 0) {
+                      const uptimeSeconds = parseFloat(data.data.result[0].value[1]);
+                      const hours = Math.floor(uptimeSeconds / 3600);
+                      const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+                      document.getElementById('uptime').textContent =
+                          `${hours}h ${minutes}m`;
+                  }
+              });
+
+          fetch('/api/v1/query?query=count(up)')
+              .then(r => r.json())
+              .then(data => {
+                  if (data.data.result.length > 0) {
+                      document.getElementById('targets').textContent =
+                          data.data.result[0].value[1];
+                  }
+              });
+      </script>
+  </body>
+  </html>
