@@ -1059,22 +1059,6 @@ prometheus:
       runAsNonRoot: true
       runAsGroup: null
       fsGroup: null
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop: ["ALL"]
-      seccompProfile:
-        type: RuntimeDefault
-    configmapReload:
-      # --- BEGIN OpenShift SCC Fixes for Prometheus Configmap Reload ---
-      containerSecurityContext:
-        runAsUser: null
-        runAsGroup: null
-        runAsNonRoot: true
-        allowPrivilegeEscalation: false
-        capabilities:
-          drop: ["ALL"]
-        seccompProfile:
-          type: RuntimeDefault
     ingress:
       enabled: true
       annotations:
@@ -1134,7 +1118,7 @@ prometheus:
         configMap: prometheus-console-libraries
         readOnly: true
     persistentVolume:
-      enabled: false
+      enabled: true
     service:
       servicePort: 9090
     resources:
@@ -1148,6 +1132,21 @@ grafana:
     runAsUser: 1012310000
     runAsGroup: 1012310000
     fsGroup: 1012310000
+  readinessProbe:
+    httpGet:
+      path: /api/health
+      port: 3000
+    timeoutSeconds: 5
+    periodSeconds: 15
+    successThreshold: 1
+    failureThreshold: 5
+  livenessProbe:
+    httpGet:
+      path: /api/health
+      port: 3000
+    initialDelaySeconds: 120
+    timeoutSeconds: 60
+    failureThreshold: 20
   ingress:
     enabled: true
     annotations:
@@ -1318,12 +1317,6 @@ tempo:
     fsGroup: 1012310000
   fullnameOverride: tempo
   tempo:
-    containerSecurityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - ALL
-      readOnlyRootFilesystem: true
     persistence:
       enabled: false
     storage:
