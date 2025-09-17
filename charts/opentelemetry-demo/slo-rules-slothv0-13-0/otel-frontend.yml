@@ -157,7 +157,7 @@ groups:
       sloth_service: otel-shop
       sloth_slo: availability
       sloth_spec: prometheus/v1
-      sloth_version: v0.12.0
+      sloth_version: v0.13.0
 - name: sloth-slo-alerts-otel-shop-availability
   rules:
   - alert: otel-shop HighErrorRate
@@ -358,7 +358,7 @@ groups:
       sloth_service: otel-shop
       sloth_slo: latency-1s
       sloth_spec: prometheus/v1
-      sloth_version: v0.12.0
+      sloth_version: v0.13.0
 - name: sloth-slo-alerts-otel-shop-latency-1s
   rules:
   - alert: otel-shop HighErrorRate
@@ -559,7 +559,7 @@ groups:
       sloth_service: otel-shop
       sloth_slo: latency-100ms
       sloth_spec: prometheus/v1
-      sloth_version: v0.12.0
+      sloth_version: v0.13.0
 - name: sloth-slo-alerts-otel-shop-latency-100ms
   rules:
   - alert: otel-shop HighErrorRate
